@@ -39,11 +39,13 @@ class AuthRepository {
   /// Вызывается при повторных запусках
   Future<UserSession> login({
     required String deviceId,
+    String? platform,
   }) async {
     final response = await _apiClient.post(
       ApiEndpoints.authLogin,
       data: {
         'device_id': deviceId,
+        'platform': platform ?? _getPlatform(),
       },
     );
 

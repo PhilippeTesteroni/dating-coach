@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_typography.dart';
 import '../../shared/widgets/dc_scaffold.dart';
+import '../../shared/widgets/dc_menu.dart';
 import '../../shared/widgets/mode_list_item.dart';
+import '../../services/user_service.dart';
 
 /// Экран выбора режима для Dating Coach
 /// 
@@ -18,7 +20,7 @@ class ModeSelectionScreen extends StatelessWidget {
     return DCScaffold(
       showMenu: true,
       onMenuTap: () {
-        // TODO: Open menu/drawer
+        showDCMenu(context, balance: UserService().balance);
       },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,6 +57,7 @@ class ModeSelectionScreen extends StatelessWidget {
 
   Widget _buildModeList() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ModeListItem(
           title: 'Open Chat',

@@ -3,6 +3,7 @@ import '../../app.dart';
 import '../../data/api/api_client.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../services/auth_service.dart';
+import '../../services/user_service.dart';
 import '../../shared/widgets/dc_scaffold.dart';
 import '../../shared/widgets/dc_loader.dart';
 import '../../core/theme/app_colors.dart';
@@ -13,6 +14,8 @@ import '../../core/theme/app_typography.dart';
 /// Показывает loader пока идёт:
 /// - Инициализация Firebase
 /// - Авторизация пользователя (register/login)
+/// - Загрузка баланса
+/// - Загрузка профиля
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -22,7 +25,7 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   // TODO: Вынести в конфиг/env
-  static const bool _skipAuth = true; // Для тестирования без бэкенда
+  static const bool _skipAuth = false; // Для тестирования без бэкенда
   
   String? _errorMessage;
   bool _isLoading = true;
@@ -34,8 +37,11 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initialize() async {
-    // Dev-режим: пропускаем авторизацию
+    // Dev-режим: пропускаем авторизацию, ставим фейковый баланс
     if (_skipAuth) {
+      // Фейковый баланс для тестирования UI
+      UserService().updateBalance(12);
+      
       await Future.delayed(const Duration(milliseconds: 500));
       if (mounted) {
         Navigator.of(context).pushReplacementNamed(Routes.modeSelection);
@@ -53,18 +59,31 @@ class _SplashScreenState extends State<SplashScreen> {
         apiClient: apiClient,
       );
 
-      // Инициализируем сессию
-      await authService.initSession();
+      // 1. Инициализируем сессию (register/login)
+      final session = await authService.initSession();
+
+      // 2. Инициализируем UserService
+      UserService().init(
+        session: session,
+        apiClient: apiClient,
+      );
+
+      // 3. Загружаем баланс и профиль параллельно
+      await Future.wait([
+        UserService().loadBalance(),
+        UserService().loadProfile(),
+      ]);
 
       if (mounted) {
         Navigator.of(context).pushReplacementNamed(Routes.modeSelection);
       }
     } catch (e) {
       // При ошибке показываем сообщение
+      debugPrint('🔴 Splash init error: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Failed to connect. Please try again.';
+          _errorMessage = 'Failed to connect. Please try again.\n\nError: $e';
         });
       }
     }

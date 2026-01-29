@@ -4,14 +4,29 @@ import 'app_colors.dart';
 
 /// Типографика приложения Dating Coach
 abstract class AppTypography {
+  // ============ Font Weights ============
+  /// Обычный текст
+  static const FontWeight regular = FontWeight.w400;
+  /// Полужирный (лейблы, кнопки)
+  static const FontWeight semibold = FontWeight.w600;
+
   /// Базовый TextStyle с Inter
   static TextStyle get _baseStyle => GoogleFonts.inter();
+
+  /// Большой дисплей (48px, semibold) — для чисел баланса
+  static TextStyle get displayLarge => _baseStyle.copyWith(
+        fontSize: 48,
+        fontWeight: semibold,
+        color: AppColors.textPrimary,
+        height: 1.1,
+        letterSpacing: -1.0,
+      );
 
   /// Заголовок экрана (32px, normal weight)
   /// "What do you want to focus on right now?"
   static TextStyle get titleLarge => _baseStyle.copyWith(
         fontSize: 32,
-        fontWeight: FontWeight.w400,
+        fontWeight: regular,
         color: AppColors.textPrimary,
         height: 1.2,
         letterSpacing: -0.5,
@@ -21,7 +36,7 @@ abstract class AppTypography {
   /// "Open Chat", "Practice"
   static TextStyle get titleMedium => _baseStyle.copyWith(
         fontSize: 20,
-        fontWeight: FontWeight.w600,
+        fontWeight: semibold,
         color: AppColors.textPrimary,
         height: 1.3,
       );
@@ -30,14 +45,48 @@ abstract class AppTypography {
   /// Описания под заголовками
   static TextStyle get bodyMedium => _baseStyle.copyWith(
         fontSize: 16,
-        fontWeight: FontWeight.w400,
+        fontWeight: regular,
         color: AppColors.textSecondary,
         height: 1.5,
       );
 
-  /// Акцентный текст (для выделенных слов)
+  /// Мелкий текст (14px, normal)
+  /// Подписи, hints
+  static TextStyle get bodySmall => _baseStyle.copyWith(
+        fontSize: 14,
+        fontWeight: regular,
+        color: AppColors.textSecondary,
+        height: 1.4,
+      );
+
+  /// Акцентный текст (для выделенных слов типа "focus")
   static TextStyle get titleLargeAccent => titleLarge.copyWith(
-        fontWeight: FontWeight.w600,
+        fontWeight: semibold,
         color: AppColors.accent,
+      );
+
+  // ============ Form & Profile styles ============
+
+  /// Лейбл поля формы (Name, Age range, etc.) — полужирный
+  static TextStyle get fieldLabel => bodyMedium.copyWith(
+        color: AppColors.textPrimary,
+        fontWeight: semibold,
+      );
+
+  /// Значение поля формы (Sarah, 25-35, etc.) — обычный
+  static TextStyle get fieldValue => bodyMedium.copyWith(
+        color: AppColors.textPrimary,
+        fontWeight: regular,
+      );
+
+  /// Текст-ссылка (Privacy Policy, Terms, Delete chats)
+  static TextStyle get linkText => bodyMedium.copyWith(
+        color: AppColors.textSecondary,
+      );
+
+  /// Акцентная кнопка (Save, Edit)
+  static TextStyle get buttonAccent => bodyMedium.copyWith(
+        color: AppColors.primary,
+        fontWeight: semibold,
       );
 }

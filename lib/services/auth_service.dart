@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/utils/device_id.dart';
 import '../data/api/api_client.dart';
@@ -38,36 +39,45 @@ class AuthService {
   Future<UserSession> initSession() async {
     // Пробуем загрузить сохранённую сессию
     final savedSession = await _loadSession();
+    debugPrint('🔐 Saved session: ${savedSession?.userId}, expired: ${savedSession?.isExpired}');
     
     if (savedSession != null && !savedSession.isExpired) {
       // Есть валидная сессия — делаем login для обновления токена
       try {
+        debugPrint('🔐 Trying login with deviceId: ${savedSession.deviceId}');
         final session = await _authRepository.login(
           deviceId: savedSession.deviceId,
         );
+        debugPrint('🔐 Login success: ${session.userId}');
         await _saveSession(session);
         _currentSession = session;
+        _apiClient.setAuthToken(session.token);
         return session;
       } catch (e) {
         // Если login не удался — пробуем register
+        debugPrint('🔐 Login failed: $e, falling back to register');
         return _registerNewUser();
       }
     }
     
     // Нет сессии или истекла — регистрируем нового пользователя
+    debugPrint('🔐 No valid session, registering new user');
     return _registerNewUser();
   }
 
   /// Регистрация нового пользователя
   Future<UserSession> _registerNewUser() async {
     final deviceId = await DeviceId.get();
+    debugPrint('🔐 Registering with deviceId: $deviceId');
     
     final session = await _authRepository.register(
       deviceId: deviceId,
     );
+    debugPrint('🔐 Registered new user: ${session.userId}');
     
     await _saveSession(session);
     _currentSession = session;
+    _apiClient.setAuthToken(session.token);
     
     return session;
   }

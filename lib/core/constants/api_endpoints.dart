@@ -3,12 +3,11 @@
 /// Все запросы идут ТОЛЬКО на dating-coach-api,
 /// который проксирует к внутренним сервисам
 abstract class ApiEndpoints {
-  /// Base URL для API
-  /// TODO: Вынести в .env или flavor config
-  static const String baseUrl = 'https://api.dating-coach.app';
+  /// Base URL для API (Render production)
+  static const String baseUrl = 'https://dating-coach-api-tp7h.onrender.com';
   
-  /// Development URL
-  static const String devBaseUrl = 'http://localhost:8007';
+  /// Development URL (use baseUrl for real device testing)
+  static const String devBaseUrl = 'https://dating-coach-api-tp7h.onrender.com';
   
   // ============ Auth ============
   
@@ -33,6 +32,19 @@ abstract class ApiEndpoints {
   /// Обновить профиль пользователя
   /// PATCH /api/v1/user/profile
   static const String userProfileUpdate = '/api/v1/user/profile';
+  
+  /// Получить баланс пользователя
+  /// GET /api/v1/user/balance
+  /// Response: { "balance": 12 }
+  static const String userBalance = '/api/v1/user/balance';
+  
+  // ============ Purchase ============
+  
+  /// Верифицировать покупку
+  /// POST /api/v1/purchase/verify
+  /// Body: { "product_id": "credits_10", "purchase_token": "...", "platform": "google_play" }
+  /// Response: { "success": true, "credits_added": 10, "new_balance": 22 }
+  static const String purchaseVerify = '/api/v1/purchase/verify';
   
   // ============ Chat ============
   
