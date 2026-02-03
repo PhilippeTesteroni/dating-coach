@@ -63,52 +63,49 @@ class DCConfirmModal extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       insetPadding: const EdgeInsets.symmetric(horizontal: 40),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(context),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.textPrimary,
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title, style: AppTypography.titleMedium, textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                Text(
+                  message,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                DCPrimaryTextButton(
+                  text: confirmText,
+                  onPressed: onConfirm,
+                ),
+                DCSecondaryTextButton(
+                  text: cancelText,
+                  onPressed: onCancel,
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 16,
+            right: 16,
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context, false),
+              child: const Icon(
+                Icons.close,
+                size: 24,
+                color: AppColors.textSecondary,
               ),
-              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
-            DCPrimaryTextButton(
-              text: confirmText,
-              onPressed: onConfirm,
-            ),
-            DCSecondaryTextButton(
-              text: cancelText,
-              onPressed: onCancel,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Text(title, style: AppTypography.titleMedium),
-        Positioned(
-          right: 0,
-          child: GestureDetector(
-            onTap: () => Navigator.pop(context, false),
-            child: const Icon(
-              Icons.close,
-              size: 24,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 }

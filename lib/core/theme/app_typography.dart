@@ -41,6 +41,15 @@ abstract class AppTypography {
         height: 1.3,
       );
 
+  /// Заголовок экрана в навбаре (16px, normal, серый)
+  /// "Profile", "Balance", "About" — не должен привлекать внимание
+  static TextStyle get screenTitle => _baseStyle.copyWith(
+        fontSize: 16,
+        fontWeight: regular,
+        color: AppColors.textSecondary,
+        height: 1.3,
+      );
+
   /// Основной текст (16px, normal)
   /// Описания под заголовками
   static TextStyle get bodyMedium => _baseStyle.copyWith(

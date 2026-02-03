@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import '../../app.dart';
 import '../../data/api/api_client.dart';
 import '../../data/repositories/auth_repository.dart';
+import '../../services/app_settings_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/user_service.dart';
+import '../../services/characters_service.dart';
 import '../../shared/widgets/dc_scaffold.dart';
 import '../../shared/widgets/dc_loader.dart';
 import '../../core/theme/app_colors.dart';
@@ -68,10 +70,17 @@ class _SplashScreenState extends State<SplashScreen> {
         apiClient: apiClient,
       );
 
-      // 3. Загружаем баланс и профиль параллельно
+      // 3. Инициализируем CharactersService
+      CharactersService().init(apiClient);
+
+      // 4. Инициализируем AppSettingsService
+      AppSettingsService().init(apiClient);
+
+      // 5. Загружаем данные параллельно
       await Future.wait([
         UserService().loadBalance(),
         UserService().loadProfile(),
+        AppSettingsService().loadSettings(),
       ]);
 
       if (mounted) {

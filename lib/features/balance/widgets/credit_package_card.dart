@@ -65,8 +65,9 @@ class CreditPackageCard extends StatelessWidget {
             else
               Text(
                 price,
-                style: AppTypography.titleMedium.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
           ],

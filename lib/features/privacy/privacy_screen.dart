@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../shared/widgets/dc_back_button.dart';
+import '../../shared/widgets/dc_header.dart';
 
 class PrivacyScreen extends StatelessWidget {
   const PrivacyScreen({super.key});
@@ -52,21 +53,9 @@ class PrivacyScreen extends StatelessWidget {
   }
 
   Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          const DCBackButton(),
-          Expanded(
-            child: Text(
-              'Privacy',
-              textAlign: TextAlign.center,
-              style: AppTypography.titleMedium,
-            ),
-          ),
-          const SizedBox(width: 40),
-        ],
-      ),
+    return DCHeader(
+      title: 'Privacy',
+      leading: const DCBackButton(),
     );
   }
 

@@ -46,6 +46,13 @@ abstract class ApiEndpoints {
   /// Response: { "success": true, "credits_added": 10, "new_balance": 22 }
   static const String purchaseVerify = '/api/v1/purchase/verify';
   
+  // ============ Settings ============
+  
+  /// Получить настройки приложения
+  /// GET /api/v1/settings
+  /// Response: { "app_id": "dating_coach", "credit_cost": 1, ... }
+  static const String settings = '/api/v1/settings';
+  
   // ============ Chat ============
   
   /// Создать новую сессию чата
@@ -59,4 +66,29 @@ abstract class ApiEndpoints {
   /// Получить историю чата
   /// GET /api/v1/chat/history/{session_id}
   static String chatHistory(String sessionId) => '/api/v1/chat/history/$sessionId';
+  
+  // ============ Characters ============
+  
+  /// Получить список персонажей
+  /// GET /api/v1/characters?preferred_gender={all|male|female}
+  /// Response: { "characters": [...] }
+  static const String characters = '/api/v1/characters';
+  
+  // ============ Conversations ============
+  
+  /// Создать новую беседу
+  /// POST /api/v1/conversations
+  /// Body: { "submode_id": "open_chat", "character_id": "anna", "language": "ru" }
+  /// Response: { "id": "uuid", "mode_id": "...", ... }
+  static const String conversations = '/api/v1/conversations';
+  
+  /// Получить сообщения беседы
+  /// GET /api/v1/conversations/{id}/messages
+  static String conversationMessages(String id) => '/api/v1/conversations/$id/messages';
+  
+  /// Отправить сообщение в беседу
+  /// POST /api/v1/conversations/{id}/messages
+  /// Body: { "content": "..." }
+  /// Response: { "user_message": {...}, "assistant_message": {...} }
+  static String sendMessage(String conversationId) => '/api/v1/conversations/$conversationId/messages';
 }

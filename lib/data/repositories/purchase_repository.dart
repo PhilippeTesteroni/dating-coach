@@ -36,7 +36,7 @@ class PurchaseRepository {
   }) async {
     final response = await _apiClient.post(
       ApiEndpoints.purchaseVerify,
-      body: {
+      data: {
         'product_id': productId,
         'purchase_token': purchaseToken,
         'platform': platform,

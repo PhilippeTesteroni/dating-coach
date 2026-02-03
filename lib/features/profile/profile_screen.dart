@@ -5,9 +5,11 @@ import '../../core/theme/app_typography.dart';
 import '../../data/api/api_client.dart';
 import '../../data/models/user_profile.dart';
 import '../../data/repositories/profile_repository.dart';
+import '../../services/characters_service.dart';
 import '../../services/user_service.dart';
 import '../../shared/widgets/dc_back_button.dart';
 import '../../shared/widgets/dc_confirm_modal.dart';
+import '../../shared/widgets/dc_header.dart';
 import '../../app.dart';
 import 'profile_edit_modal.dart';
 
@@ -85,6 +87,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _openEditScreen() async {
     if (_profile == null) return;
     
+    final oldPreferredGender = _profile!.preferredGender;
+    
     final result = await ProfileEditModal.show(
       context: context,
       profile: _profile!,
@@ -105,6 +109,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     
     if (result != null) {
       UserService().updateProfile(result); // Синхронизируем с кэшем
+      
+      // Инвалидируем кэш персонажей если изменился preferredGender
+      if (result.preferredGender != oldPreferredGender) {
+        CharactersService().invalidate();
+        debugPrint('Characters cache invalidated: preferredGender changed');
+      }
+      
       setState(() => _profile = result);
     }
   }
@@ -167,21 +178,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          const DCBackButton(),
-          Expanded(
-            child: Text(
-              'Profile',
-              textAlign: TextAlign.center,
-              style: AppTypography.titleMedium,
-            ),
-          ),
-          const SizedBox(width: 40),
-        ],
-      ),
+    return DCHeader(
+      title: 'Profile',
+      leading: const DCBackButton(),
     );
   }
 

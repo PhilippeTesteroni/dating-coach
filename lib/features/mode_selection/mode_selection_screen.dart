@@ -3,7 +3,9 @@ import '../../core/theme/app_typography.dart';
 import '../../shared/widgets/dc_scaffold.dart';
 import '../../shared/widgets/dc_menu.dart';
 import '../../shared/widgets/mode_list_item.dart';
+import '../../shared/navigation/dc_page_route.dart';
 import '../../services/user_service.dart';
+import '../open_chat/character_selection_screen.dart';
 
 /// Экран выбора режима для Dating Coach
 /// 
@@ -14,6 +16,12 @@ import '../../services/user_service.dart';
 /// - Guided Reflection
 class ModeSelectionScreen extends StatelessWidget {
   const ModeSelectionScreen({super.key});
+
+  void _navigateToOpenChat(BuildContext context) {
+    Navigator.of(context).push(
+      DCPageRoute(page: const CharacterSelectionScreen()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +41,7 @@ class ModeSelectionScreen extends StatelessWidget {
           const SizedBox(height: 80),
           
           // Mode list
-          _buildModeList(),
+          _buildModeList(context),
         ],
       ),
     );
@@ -55,16 +63,14 @@ class ModeSelectionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildModeList() {
+  Widget _buildModeList(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ModeListItem(
           title: 'Open Chat',
           subtitle: 'Unstructured space for thoughts and words.',
-          onTap: () {
-            // TODO: Navigate to Open Chat
-          },
+          onTap: () => _navigateToOpenChat(context),
         ),
         const SizedBox(height: 36),
         

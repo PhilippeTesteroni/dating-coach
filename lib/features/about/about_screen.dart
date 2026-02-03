@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../shared/widgets/dc_back_button.dart';
+import '../../shared/widgets/dc_header.dart';
 
 /// Экран "О приложении"
 class AboutScreen extends StatelessWidget {
@@ -81,22 +82,9 @@ class AboutScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          const DCBackButton(),
-          Expanded(
-            child: Text(
-              'About',
-              style: AppTypography.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-          ),
-          // Placeholder для симметрии
-          const SizedBox(width: 40),
-        ],
-      ),
+    return DCHeader(
+      title: 'About',
+      leading: const DCBackButton(),
     );
   }
 
