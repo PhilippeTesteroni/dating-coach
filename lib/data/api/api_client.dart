@@ -14,6 +14,7 @@ class ApiClient {
       baseUrl: baseUrl ?? ApiEndpoints.devBaseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
+      validateStatus: (status) => status != null && status < 300,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -112,7 +113,8 @@ class ApiClient {
       
       case DioExceptionType.badResponse:
         final statusCode = e.response?.statusCode;
-        final message = e.response?.data?['detail'] ?? 'Server error';
+        final data = e.response?.data;
+        final message = (data is Map ? data['detail'] : null) ?? 'Server error';
         return ApiException(message, code: 'HTTP_$statusCode', statusCode: statusCode);
       
       default:
