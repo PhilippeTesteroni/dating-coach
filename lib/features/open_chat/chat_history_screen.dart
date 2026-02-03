@@ -95,24 +95,29 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
   }
 
   Future<bool> _confirmDelete(ConversationPreview preview) async {
-    final confirmed = await DCConfirmModal.show(
-      context: context,
-      title: 'Delete chat?',
-      message: 'This conversation will be permanently deleted.',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
-    );
-    if (confirmed != true) return false;
-
     try {
+      debugPrint('_confirmDelete called for ${preview.id}');
+      final confirmed = await DCConfirmModal.show(
+        context: context,
+        title: 'Delete chat?',
+        message: 'This conversation will be permanently deleted.',
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+      );
+      debugPrint('Modal result: $confirmed');
+      if (confirmed != true) return false;
+
+      debugPrint('Calling deleteConversation...');
       await ConversationsRepository(UserService().apiClient)
           .deleteConversation(preview.id);
+      debugPrint('Delete success');
       setState(() {
         _conversations.removeWhere((c) => c.id == preview.id);
       });
-      return false; // already removed manually
-    } catch (e) {
+      return false;
+    } catch (e, stack) {
       debugPrint('Delete failed: $e');
+      debugPrint('Stack: $stack');
       return false;
     }
   }
