@@ -83,6 +83,20 @@ class ApiClient {
     }
   }
 
+  /// DELETE запрос
+  /// Возвращает body если есть, пустую map если 204
+  Future<Map<String, dynamic>> delete(String path) async {
+    try {
+      final response = await _dio.delete(path);
+      if (response.statusCode == 204 || response.data == null) {
+        return {};
+      }
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   /// Обработка ошибок Dio
   ApiException _handleError(DioException e) {
     switch (e.type) {

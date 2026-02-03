@@ -18,11 +18,13 @@ import '../../shared/widgets/dc_header.dart';
 class ChatScreen extends StatefulWidget {
   final Character character;
   final String submodeId;
+  final String? conversationId;
 
   const ChatScreen({
     super.key,
     required this.character,
     this.submodeId = 'open_chat',
+    this.conversationId,
   });
 
   @override
@@ -55,19 +57,38 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _initConversation() async {
     try {
-      final conversation = await _repository.createConversation(
-        submodeId: widget.submodeId,
-        characterId: widget.character.id,
-        language: 'en',
-      );
-      
-      setState(() {
-        _conversation = conversation;
-        _isLoading = false;
-        if (conversation.firstMessage != null) {
-          _messages.add(conversation.firstMessage!);
-        }
-      });
+      if (widget.conversationId != null) {
+        // Resume existing conversation — load messages
+        final messages = await _repository.getMessages(widget.conversationId!);
+        setState(() {
+          _conversation = Conversation(
+            id: widget.conversationId!,
+            modeId: '',
+            submodeId: widget.submodeId,
+            actorType: ActorType.character,
+            language: 'en',
+            isActive: true,
+            createdAt: DateTime.now(),
+          );
+          _messages.addAll(messages);
+          _isLoading = false;
+        });
+      } else {
+        // New conversation
+        final conversation = await _repository.createConversation(
+          submodeId: widget.submodeId,
+          characterId: widget.character.id,
+          language: 'en',
+        );
+        
+        setState(() {
+          _conversation = conversation;
+          _isLoading = false;
+          if (conversation.firstMessage != null) {
+            _messages.add(conversation.firstMessage!);
+          }
+        });
+      }
     } catch (e) {
       setState(() {
         _error = 'Failed to start conversation';

@@ -12,6 +12,7 @@ import '../../shared/widgets/dc_menu_button.dart';
 import '../../shared/widgets/dc_modal.dart';
 import '../../shared/widgets/dc_header.dart';
 import 'chat_screen.dart';
+import 'chat_history_screen.dart';
 
 /// Экран выбора персонажа для Open Chat
 class CharacterSelectionScreen extends StatefulWidget {
@@ -114,8 +115,11 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
   }
 
   void _onHistoryTap() {
-    // TODO: Navigate to chats history
-    debugPrint('Open chats history');
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const ChatHistoryScreen(),
+      ),
+    );
   }
 
   @override

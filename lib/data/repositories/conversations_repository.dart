@@ -1,5 +1,6 @@
 import '../api/api_client.dart';
 import '../models/conversation.dart';
+import '../models/conversation_preview.dart';
 import '../models/message.dart';
 import '../../core/constants/api_endpoints.dart';
 
@@ -8,6 +9,15 @@ class ConversationsRepository {
   final ApiClient _apiClient;
 
   ConversationsRepository(this._apiClient);
+
+  /// Получить список бесед для режима
+  Future<List<ConversationPreview>> getConversations(String submodeId) async {
+    final response = await _apiClient.get(
+      ApiEndpoints.conversationsList(submodeId),
+    );
+    final list = response['conversations'] as List;
+    return list.map((j) => ConversationPreview.fromJson(j)).toList();
+  }
 
   /// Создать новую беседу
   /// 
@@ -55,6 +65,17 @@ class ConversationsRepository {
       assistantMessage: Message.fromJson(response['assistant_message']),
       newBalance: response['new_balance'] as int?,
     );
+  }
+
+  /// Удалить одну беседу
+  Future<void> deleteConversation(String id) async {
+    await _apiClient.delete(ApiEndpoints.conversationDelete(id));
+  }
+
+  /// Удалить все беседы пользователя
+  Future<int> deleteAllConversations() async {
+    final response = await _apiClient.delete(ApiEndpoints.conversationsDeleteAll);
+    return response['deleted_count'] as int;
   }
 }
 

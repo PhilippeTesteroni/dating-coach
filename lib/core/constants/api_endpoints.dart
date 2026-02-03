@@ -82,6 +82,11 @@ abstract class ApiEndpoints {
   /// Response: { "id": "uuid", "mode_id": "...", ... }
   static const String conversations = '/api/v1/conversations';
   
+  /// Получить список бесед (история)
+  /// GET /api/v1/conversations?submode_id=open_chat
+  /// Response: { "conversations": [...] }
+  static String conversationsList(String submodeId) => '/api/v1/conversations?submode_id=$submodeId';
+  
   /// Получить сообщения беседы
   /// GET /api/v1/conversations/{id}/messages
   static String conversationMessages(String id) => '/api/v1/conversations/$id/messages';
@@ -91,4 +96,14 @@ abstract class ApiEndpoints {
   /// Body: { "content": "..." }
   /// Response: { "user_message": {...}, "assistant_message": {...} }
   static String sendMessage(String conversationId) => '/api/v1/conversations/$conversationId/messages';
+
+  /// Удалить одну беседу
+  /// DELETE /api/v1/conversations/{id}
+  /// Response: 204 No Content
+  static String conversationDelete(String id) => '/api/v1/conversations/$id';
+
+  /// Удалить все беседы пользователя
+  /// DELETE /api/v1/conversations
+  /// Response: { "deleted_count": N }
+  static const String conversationsDeleteAll = '/api/v1/conversations';
 }

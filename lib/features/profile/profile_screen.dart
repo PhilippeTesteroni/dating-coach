@@ -5,6 +5,7 @@ import '../../core/theme/app_typography.dart';
 import '../../data/api/api_client.dart';
 import '../../data/models/user_profile.dart';
 import '../../data/repositories/profile_repository.dart';
+import '../../data/repositories/conversations_repository.dart';
 import '../../services/characters_service.dart';
 import '../../services/user_service.dart';
 import '../../shared/widgets/dc_back_button.dart';
@@ -130,10 +131,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     if (confirmed == true && mounted) {
-      // TODO: Actually delete chat history
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chat history cleared')),
-      );
+      try {
+        final repo = ConversationsRepository(UserService().apiClient);
+        final result = await repo.deleteAllConversations();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Deleted $result conversations')),
+          );
+        }
+      } catch (e) {
+        debugPrint('Delete all failed: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to delete history')),
+          );
+        }
+      }
     }
   }
 
