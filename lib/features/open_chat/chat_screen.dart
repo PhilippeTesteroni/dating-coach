@@ -224,6 +224,7 @@ class _ChatScreenState extends State<ChatScreen> {
         if (_isSending && reversedIndex == _messages.length) {
           return DCChatBubble.typing(
             avatarUrl: widget.character.thumbUrl,
+            fullImageUrl: widget.character.avatarUrl,
             characterName: widget.character.name,
           );
         }
@@ -236,6 +237,7 @@ class _ChatScreenState extends State<ChatScreen> {
           text: message.content,
           isUser: message.isUser,
           avatarUrl: message.isUser ? null : widget.character.thumbUrl,
+          fullImageUrl: message.isUser ? null : widget.character.avatarUrl,
           characterName: widget.character.name,
           showName: isFirstAssistantMessage,
         );

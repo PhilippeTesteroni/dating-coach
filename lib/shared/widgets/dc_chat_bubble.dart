@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
+import 'dc_photo_viewer.dart';
 
 /// Баббл сообщения в чате
 /// 
@@ -15,6 +16,7 @@ class DCChatBubble extends StatelessWidget {
   final String? text;
   final bool isUser;
   final String? avatarUrl;
+  final String? fullImageUrl;
   final String? characterName;
   final bool showName;
   final bool isTyping;
@@ -24,6 +26,7 @@ class DCChatBubble extends StatelessWidget {
     this.text,
     required this.isUser,
     this.avatarUrl,
+    this.fullImageUrl,
     this.characterName,
     this.showName = false,
     this.isTyping = false,
@@ -33,6 +36,7 @@ class DCChatBubble extends StatelessWidget {
   const DCChatBubble.typing({
     super.key,
     this.avatarUrl,
+    this.fullImageUrl,
     this.characterName,
   })  : text = null,
         isUser = false,
@@ -132,6 +136,24 @@ class DCChatBubble extends StatelessWidget {
   }
 
   Widget _buildCharacterAvatar() {
+    final avatar = _buildCharacterAvatarImage();
+    
+    if (fullImageUrl == null || fullImageUrl!.isEmpty) {
+      return avatar;
+    }
+
+    return Builder(
+      builder: (context) => GestureDetector(
+        onTap: () => DCPhotoViewer.show(
+          context,
+          imageUrl: fullImageUrl!,
+        ),
+        child: avatar,
+      ),
+    );
+  }
+
+  Widget _buildCharacterAvatarImage() {
     if (avatarUrl == null || avatarUrl!.isEmpty) {
       return Container(
         width: 32,
