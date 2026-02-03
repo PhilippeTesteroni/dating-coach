@@ -182,7 +182,11 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
           background: Container(
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 24),
-            child: const Icon(Icons.delete_outline, color: Colors.red, size: 28),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.delete_outline, color: Colors.black, size: 28),
           ),
           child: _ChatHistoryCard(
             preview: preview,

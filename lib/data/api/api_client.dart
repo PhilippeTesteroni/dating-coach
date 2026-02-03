@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../../core/constants/api_endpoints.dart';
 
 /// HTTP клиент для Dating Coach API
@@ -88,6 +89,7 @@ class ApiClient {
   Future<Map<String, dynamic>> delete(String path) async {
     try {
       final response = await _dio.delete(path);
+      debugPrint('DELETE $path → status=${response.statusCode} data=${response.data} type=${response.data.runtimeType}');
       if (response.statusCode == 204 || response.data == null || response.data is! Map) {
         return {};
       }
