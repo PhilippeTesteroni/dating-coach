@@ -96,7 +96,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
 
   Future<bool> _confirmDelete(ConversationPreview preview) async {
     final confirmed = await DCConfirmModal.show(
-      context,
+      context: context,
       title: 'Delete chat?',
       message: 'This conversation will be permanently deleted.',
       confirmText: 'Delete',

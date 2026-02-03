@@ -88,7 +88,7 @@ class ApiClient {
   Future<Map<String, dynamic>> delete(String path) async {
     try {
       final response = await _dio.delete(path);
-      if (response.statusCode == 204 || response.data == null) {
+      if (response.statusCode == 204 || response.data == null || response.data is! Map) {
         return {};
       }
       return response.data as Map<String, dynamic>;
