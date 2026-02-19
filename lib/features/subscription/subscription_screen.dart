@@ -66,6 +66,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           await _verifyPurchase(
             productId: result.productId ?? product.productId,
             purchaseToken: result.purchaseToken!,
+            basePlanId: product.basePlanId,
           );
         } else if (result.error == 'canceled') {
           // Пользователь отменил — молча сбрасываем
@@ -83,12 +84,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   Future<void> _verifyPurchase({
     required String productId,
     required String purchaseToken,
+    String? basePlanId,
   }) async {
     try {
       await _subscriptionRepo.verifySubscription(
         productId: productId,
         purchaseToken: purchaseToken,
         platform: 'google_play',
+        basePlanId: basePlanId,
       );
 
       // Обновить статус подписки с сервера

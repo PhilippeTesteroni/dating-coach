@@ -19,6 +19,7 @@ class SubscriptionRepository {
     required String productId,
     required String purchaseToken,
     String platform = 'google_play',
+    String? basePlanId,
   }) async {
     final response = await _apiClient.post(
       ApiEndpoints.subscriptionVerify,
@@ -26,6 +27,7 @@ class SubscriptionRepository {
         'product_id': productId,
         'purchase_token': purchaseToken,
         'platform': platform,
+        if (basePlanId != null) 'base_plan_id': basePlanId,
       },
     );
     return response;
