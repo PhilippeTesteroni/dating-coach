@@ -78,7 +78,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
       // 5. Загружаем данные параллельно
       await Future.wait([
-        UserService().loadBalance(),
+        UserService().loadSubscriptionStatus(),
         UserService().loadProfile(),
         AppSettingsService().loadSettings(),
       ]);

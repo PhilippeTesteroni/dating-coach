@@ -5,7 +5,9 @@ import '../../shared/widgets/dc_menu.dart';
 import '../../shared/widgets/mode_list_item.dart';
 import '../../shared/navigation/dc_page_route.dart';
 import '../../services/user_service.dart';
+import '../onboarding/onboarding_screen.dart';
 import '../open_chat/character_selection_screen.dart';
+import '../practice/practice_screen.dart';
 
 /// Экран выбора режима для Dating Coach
 /// 
@@ -17,9 +19,16 @@ import '../open_chat/character_selection_screen.dart';
 class ModeSelectionScreen extends StatelessWidget {
   const ModeSelectionScreen({super.key});
 
-  void _navigateToOpenChat(BuildContext context) {
+  void _navigateWithOnboarding(BuildContext context, Widget destination) {
+    if (!UserService().isProfileComplete) {
+      Navigator.of(context).push(
+        DCPageRoute(page: OnboardingScreen(destination: destination)),
+      );
+      return;
+    }
+
     Navigator.of(context).push(
-      DCPageRoute(page: const CharacterSelectionScreen()),
+      DCPageRoute(page: destination),
     );
   }
 
@@ -28,7 +37,7 @@ class ModeSelectionScreen extends StatelessWidget {
     return DCScaffold(
       showMenu: true,
       onMenuTap: () {
-        showDCMenu(context, balance: UserService().balance);
+        showDCMenu(context, isSubscribed: UserService().isSubscribed);
       },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,16 +79,14 @@ class ModeSelectionScreen extends StatelessWidget {
         ModeListItem(
           title: 'Open Chat',
           subtitle: 'Unstructured space for thoughts and words.',
-          onTap: () => _navigateToOpenChat(context),
+          onTap: () => _navigateWithOnboarding(context, const CharacterSelectionScreen()),
         ),
         const SizedBox(height: 36),
         
         ModeListItem(
           title: 'Practice',
           subtitle: 'Situations that unfold step by step.',
-          onTap: () {
-            // TODO: Navigate to Practice
-          },
+          onTap: () => _navigateWithOnboarding(context, const PracticeScreen()),
         ),
         const SizedBox(height: 36),
         

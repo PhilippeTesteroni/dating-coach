@@ -107,6 +107,11 @@ coverage/
 .env.*
 !.env.example
 
+# Signing
+android/key.properties
+android/app/upload-keystore.jks
+*.jks
+
 # Generated files
 *.g.dart
 *.freezed.dart

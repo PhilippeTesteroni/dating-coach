@@ -3,6 +3,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/models/character.dart';
+import '../../data/models/conversation_preview.dart';
+import '../../data/repositories/conversations_repository.dart';
 import '../../services/characters_service.dart';
 import '../../services/user_service.dart';
 import '../../shared/widgets/dc_help_button.dart';
@@ -10,6 +12,7 @@ import '../../shared/widgets/dc_history_button.dart';
 import '../../shared/widgets/dc_menu.dart';
 import '../../shared/widgets/dc_menu_button.dart';
 import '../../shared/widgets/dc_modal.dart';
+import '../../shared/widgets/dc_confirm_modal.dart';
 import '../../shared/widgets/dc_header.dart';
 import 'chat_screen.dart';
 import 'chat_history_screen.dart';
@@ -26,6 +29,7 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
   List<Character> _characters = [];
   bool _isLoading = true;
   String? _error;
+  String? _loadingCharacterId;
 
   @override
   void initState() {
@@ -106,12 +110,85 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
   }
 
 
-  void _onCharacterTap(Character character) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ChatScreen(character: character),
-      ),
-    );
+  Future<void> _onCharacterTap(Character character) async {
+    if (_loadingCharacterId != null) return; // prevent double tap
+    setState(() => _loadingCharacterId = character.id);
+
+    // Load existing conversations for this character
+    try {
+      final allConversations = await ConversationsRepository(UserService().apiClient)
+          .getConversations('open_chat');
+
+      final characterConversations = allConversations
+          .where((c) => c.characterId == character.id)
+          .toList()
+        ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
+      if (!mounted) return;
+
+      if (characterConversations.isNotEmpty) {
+        final latest = characterConversations.first;
+        final lastMsg = latest.lastMessage?.trim();
+        // Build preview: show message count + last message if available
+        String message;
+        if (lastMsg != null && lastMsg.isNotEmpty) {
+          // Use Characters to safely truncate without breaking emoji/surrogate pairs
+          final chars = lastMsg.characters;
+          final truncated = chars.length > 80 ? '${chars.take(80)}…' : lastMsg;
+          message = 'You have a conversation with ${character.name}.\n\nLast message: "$truncated"';
+        } else {
+          message = 'You have a conversation with ${character.name}.';
+        }
+
+        setState(() => _loadingCharacterId = null);
+
+        final result = await DCConfirmModal.show(
+          context: context,
+          title: 'Continue conversation?',
+          message: message,
+          confirmText: 'Continue',
+          cancelText: 'Start new',
+        );
+
+        if (!mounted) return;
+
+        if (result == true) {
+          // Continue existing
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ChatScreen(
+                character: character,
+                conversationId: latest.id,
+              ),
+            ),
+          );
+        } else if (result == false) {
+          // Start new
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ChatScreen(character: character),
+            ),
+          );
+        }
+        // result == null (dismissed) — do nothing
+      } else {
+        setState(() => _loadingCharacterId = null);
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ChatScreen(character: character),
+          ),
+        );
+      }
+    } catch (e) {
+      // On error — fallback to new conversation
+      if (!mounted) return;
+      setState(() => _loadingCharacterId = null);
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(character: character),
+        ),
+      );
+    }
   }
 
   void _onHistoryTap() {
@@ -158,7 +235,7 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
       title: 'Open Chat',
       leading: DCHelpButton(onTap: _showHelpModal),
       trailing: DCMenuButton(
-        onTap: () => showDCMenu(context, balance: UserService().balance),
+        onTap: () => showDCMenu(context, isSubscribed: UserService().isSubscribed),
       ),
     );
   }
@@ -202,6 +279,7 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
       itemBuilder: (context, index) {
         return _CharacterListItem(
           character: _characters[index],
+          isLoading: _loadingCharacterId == _characters[index].id,
           onTap: () => _onCharacterTap(_characters[index]),
         );
       },
@@ -220,10 +298,12 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
 class _CharacterListItem extends StatelessWidget {
   final Character character;
   final VoidCallback? onTap;
+  final bool isLoading;
 
   const _CharacterListItem({
     required this.character,
     this.onTap,
+    this.isLoading = false,
   });
 
   @override
@@ -243,30 +323,53 @@ class _CharacterListItem extends StatelessWidget {
 
 
   Widget _buildAvatar() {
-    return Container(
-      width: 56,
-      height: 56,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppColors.inputBackground,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: CachedNetworkImage(
-        imageUrl: character.thumbUrl,
-        fit: BoxFit.cover,
-        placeholder: (context, url) => Center(
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: AppColors.textSecondary,
+    return Stack(
+      children: [
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.inputBackground,
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: CachedNetworkImage(
+            imageUrl: character.thumbUrl,
+            fit: BoxFit.cover,
+            placeholder: (context, url) => Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            errorWidget: (context, url, error) => Center(
+              child: Text(
+                character.name[0],
+                style: AppTypography.titleMedium,
+              ),
+            ),
           ),
         ),
-        errorWidget: (context, url, error) => Center(
-          child: Text(
-            character.name[0],
-            style: AppTypography.titleMedium,
+        if (isLoading)
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.background.withOpacity(0.6),
+            ),
+            child: const Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: AppColors.action,
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
+      ],
     );
   }
 

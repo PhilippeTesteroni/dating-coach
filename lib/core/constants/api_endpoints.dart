@@ -33,18 +33,29 @@ abstract class ApiEndpoints {
   /// PATCH /api/v1/user/profile
   static const String userProfileUpdate = '/api/v1/user/profile';
   
-  /// Получить баланс пользователя
+  /// Получить баланс пользователя (legacy)
   /// GET /api/v1/user/balance
   /// Response: { "balance": 12 }
   static const String userBalance = '/api/v1/user/balance';
+
+  /// Получить статус подписки
+  /// GET /api/v1/user/subscription
+  /// Response: { "subscription_status": "none", "is_subscribed": false, "messages_used": 3, ... }
+  static const String userSubscription = '/api/v1/user/subscription';
   
   // ============ Purchase ============
   
-  /// Верифицировать покупку
+  /// Верифицировать покупку кредитов (legacy)
   /// POST /api/v1/purchase/verify
   /// Body: { "product_id": "credits_10", "purchase_token": "...", "platform": "google_play" }
   /// Response: { "success": true, "credits_added": 10, "new_balance": 22 }
   static const String purchaseVerify = '/api/v1/purchase/verify';
+
+  /// Верифицировать покупку подписки
+  /// POST /api/v1/subscription/verify
+  /// Body: { "product_id": "dc_monthly_premium", "purchase_token": "...", "platform": "google_play" }
+  /// Response: { "success": true, "subscription_status": "active" }
+  static const String subscriptionVerify = '/api/v1/subscription/verify';
   
   // ============ Settings ============
   

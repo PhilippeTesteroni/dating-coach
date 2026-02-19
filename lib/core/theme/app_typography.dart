@@ -22,6 +22,15 @@ abstract class AppTypography {
         letterSpacing: -1.0,
       );
 
+  /// Средний дисплей (28px, semibold) — для заголовков подписки
+  static TextStyle get displaySmall => _baseStyle.copyWith(
+        fontSize: 28,
+        fontWeight: semibold,
+        color: AppColors.textPrimary,
+        height: 1.2,
+        letterSpacing: -0.5,
+      );
+
   /// Заголовок экрана (32px, normal weight)
   /// "What do you want to focus on right now?"
   static TextStyle get titleLarge => _baseStyle.copyWith(

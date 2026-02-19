@@ -133,7 +133,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
               title: 'Open Chat',
               leading: const DCBackButton(),
               trailing: DCMenuButton(
-                onTap: () => showDCMenu(context, balance: UserService().balance),
+                onTap: () => showDCMenu(context, isSubscribed: UserService().isSubscribed),
               ),
             ),
             Expanded(

@@ -7,6 +7,7 @@ import 'features/profile/profile_screen.dart';
 import 'features/terms/terms_screen.dart';
 import 'features/privacy/privacy_screen.dart';
 import 'features/balance/balance_screen.dart';
+import 'features/subscription/subscription_screen.dart';
 import 'shared/navigation/dc_page_route.dart';
 
 /// Главный виджет приложения Dating Coach
@@ -49,6 +50,9 @@ class DatingCoachApp extends StatelessWidget {
       case Routes.balance:
         page = const BalanceScreen();
         break;
+      case Routes.subscription:
+        page = const SubscriptionScreen();
+        break;
       default:
         page = const SplashScreen();
     }
@@ -66,6 +70,7 @@ abstract class Routes {
   static const String terms = '/terms';
   static const String privacy = '/privacy';
   static const String balance = '/balance';
+  static const String subscription = '/subscription';
   static const String openChat = '/chat/open';
   static const String practice = '/chat/practice';
   static const String understanding = '/chat/understanding';

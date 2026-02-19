@@ -83,7 +83,7 @@ class ConversationsRepository {
 class SendMessageResult {
   final Message userMessage;
   final Message assistantMessage;
-  final int? newBalance;
+  final int? newBalance; // legacy, may be null for subscription-based apps
 
   const SendMessageResult({
     required this.userMessage,

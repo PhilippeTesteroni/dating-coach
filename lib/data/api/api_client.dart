@@ -115,7 +115,14 @@ class ApiClient {
         final statusCode = e.response?.statusCode;
         final data = e.response?.data;
         final message = (data is Map ? data['detail'] : null) ?? 'Server error';
-        return ApiException(message, code: 'HTTP_$statusCode', statusCode: statusCode);
+        final errorType = (data is Map ? data['error'] as String? : null);
+        return ApiException(
+          message,
+          code: 'HTTP_$statusCode',
+          statusCode: statusCode,
+          errorType: errorType,
+          responseData: data is Map<String, dynamic> ? data : null,
+        );
       
       default:
         return ApiException('Unknown error', code: 'UNKNOWN');
@@ -128,9 +135,20 @@ class ApiException implements Exception {
   final String message;
   final String code;
   final int? statusCode;
+  final String? errorType; // e.g. "subscription_required"
+  final Map<String, dynamic>? responseData;
 
-  ApiException(this.message, {required this.code, this.statusCode});
+  ApiException(
+    this.message, {
+    required this.code,
+    this.statusCode,
+    this.errorType,
+    this.responseData,
+  });
+
+  /// Проверка: лимит подписки исчерпан
+  bool get isSubscriptionRequired => errorType == 'subscription_required';
 
   @override
-  String toString() => 'ApiException: [$code] $message';
+  String toString() => 'ApiException: [$code] $message (type: $errorType)';
 }

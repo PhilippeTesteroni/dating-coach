@@ -7,17 +7,17 @@ import '../../core/theme/app_typography.dart';
 class DCMenu extends StatefulWidget {
   final VoidCallback? onClose;
   final VoidCallback? onProfileTap;
-  final VoidCallback? onBalanceTap;
+  final VoidCallback? onSubscriptionTap;
   final VoidCallback? onAboutTap;
-  final int? balance;
+  final bool isSubscribed;
 
   const DCMenu({
     super.key,
     this.onClose,
     this.onProfileTap,
-    this.onBalanceTap,
+    this.onSubscriptionTap,
     this.onAboutTap,
-    this.balance,
+    this.isSubscribed = false,
   });
 
   @override
@@ -126,13 +126,11 @@ class _DCMenuState extends State<DCMenu> with SingleTickerProviderStateMixin {
                         const SizedBox(height: 24),
                         
                         _MenuItem(
-                          title: 'Balance',
-                          trailing: widget.balance != null 
-                              ? '${widget.balance} credits' 
-                              : '— credits',
+                          title: 'Subscription',
+                          trailing: widget.isSubscribed ? 'Premium' : null,
                           onTap: () async {
                             await _close();
-                            widget.onBalanceTap?.call();
+                            widget.onSubscriptionTap?.call();
                           },
                         ),
                         
@@ -193,20 +191,20 @@ class _MenuItem extends StatelessWidget {
 }
 
 /// Показать меню как overlay
-void showDCMenu(BuildContext context, {int? balance}) {
+void showDCMenu(BuildContext context, {bool isSubscribed = false}) {
   final navigatorContext = context;
   final overlay = Overlay.of(context);
   late OverlayEntry entry;
   
   entry = OverlayEntry(
     builder: (context) => DCMenu(
-      balance: balance,
+      isSubscribed: isSubscribed,
       onClose: () => entry.remove(),
       onProfileTap: () {
         Navigator.of(navigatorContext).pushNamed(Routes.profile);
       },
-      onBalanceTap: () {
-        Navigator.of(navigatorContext).pushNamed(Routes.balance);
+      onSubscriptionTap: () {
+        Navigator.of(navigatorContext).pushNamed(Routes.subscription);
       },
       onAboutTap: () {
         Navigator.of(navigatorContext).pushNamed(Routes.about);

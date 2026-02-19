@@ -18,6 +18,17 @@ class AppSettingsService {
   /// Текущие настройки
   AppSettings? get settings => _settings;
 
+  // ── Subscription-based (new) ──
+
+  /// Лимит бесплатных сообщений
+  int get freeMessageLimit => _settings?.freeMessageLimit ?? 10;
+
+  /// Продукты подписки
+  List<SubscriptionProduct>? get subscriptionProducts =>
+      _settings?.subscriptionProducts;
+
+  // ── Credit-based (legacy) ──
+
   /// Стоимость сообщения в кредитах
   int get creditCost => _settings?.creditCost ?? 1;
 
@@ -43,7 +54,6 @@ class AppSettingsService {
       _settings = await repo.getSettings();
       return _settings;
     } catch (e) {
-      // При ошибке возвращаем null, используем дефолты
       return null;
     }
   }

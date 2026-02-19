@@ -4,7 +4,29 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 
-/// Google Play Billing service wrapper для Dating Coach
+/// Результат покупки подписки
+class SubscriptionPurchaseResult {
+  final bool success;
+  final String? purchaseToken;
+  final String? productId;
+  final String? error;
+
+  const SubscriptionPurchaseResult({
+    required this.success,
+    this.purchaseToken,
+    this.productId,
+    this.error,
+  });
+}
+
+/// Google Play Billing service для подписок Dating Coach
+///
+/// Product ID: week_subscription (единый в Google Play Console)
+/// Base plans: 01 (weekly), 02 (monthly)
+///
+/// queryProductDetails для подписки возвращает список
+/// GooglePlayProductDetails — по одному на каждый base plan/offer.
+/// Мы находим нужный по basePlanId и запускаем покупку.
 class BillingService {
   static final BillingService _instance = BillingService._internal();
   factory BillingService() => _instance;
@@ -14,24 +36,18 @@ class BillingService {
   StreamSubscription<List<PurchaseDetails>>? _subscription;
   bool _isInitialized = false;
 
-  // Product IDs — должны совпадать с Google Play Console
-  static const String credits10 = 'credits_10';
-  static const String credits25 = 'credits_25';
-  static const String credits50 = 'credits_50';
+  // Subscription product ID — совпадает с Google Play Console
+  static const String subscriptionProductId = 'week_subscription';
 
-  static const List<String> productIds = [
-    credits10,
-    credits25,
-    credits50,
-  ];
+  // Base plan IDs (из Google Play Console)
+  static const String weeklyBasePlan = '01';
+  static const String monthlyBasePlan = '02';
 
-  List<ProductDetails> _products = [];
-  List<ProductDetails> get products => _products;
+  // Callback для обработки результата покупки
+  Function(SubscriptionPurchaseResult)? _onPurchaseResult;
 
-  /// Initialize billing service
-  Future<void> initialize({
-    required Function(PurchaseDetails) onPurchaseUpdate,
-  }) async {
+  /// Initialize billing service и подписаться на purchase stream
+  Future<void> initialize() async {
     if (_isInitialized) return;
 
     final available = await _iap.isAvailable();
@@ -40,102 +56,187 @@ class BillingService {
     }
 
     _subscription = _iap.purchaseStream.listen(
-      (purchases) {
-        for (final purchase in purchases) {
-          onPurchaseUpdate(purchase);
-        }
-      },
+      _handlePurchaseUpdates,
       onError: (error) {
         print('[BillingService] Purchase stream error: $error');
+        _onPurchaseResult?.call(SubscriptionPurchaseResult(
+          success: false,
+          error: error.toString(),
+        ));
       },
     );
 
     _isInitialized = true;
   }
 
-  /// Load available products from Google Play
-  Future<List<ProductDetails>> loadProducts() async {
-    final response = await _iap.queryProductDetails(productIds.toSet());
-
-    if (response.error != null) {
-      throw Exception('Failed to load products: ${response.error}');
-    }
-
-    if (response.productDetails.isEmpty) {
-      print('[BillingService] No products found');
-      return [];
-    }
-
-    // Sort by credit amount
-    _products = response.productDetails..sort((a, b) {
-      final creditsA = getCreditAmountFromProductId(a.id);
-      final creditsB = getCreditAmountFromProductId(b.id);
-      return creditsA.compareTo(creditsB);
-    });
-
-    return _products;
-  }
-
-  /// Purchase a product
-  Future<void> purchaseProduct(ProductDetails product, {String? userId}) async {
-    final purchaseParam = PurchaseParam(
-      productDetails: product,
-      applicationUserName: userId,
-    );
-
-    final success = await _iap.buyConsumable(
-      purchaseParam: purchaseParam,
-      autoConsume: false,
-    );
-
-    if (!success) {
-      throw Exception('Purchase canceled or failed');
+  /// Handle purchase updates from the store
+  void _handlePurchaseUpdates(List<PurchaseDetails> purchases) {
+    for (final purchase in purchases) {
+      _handlePurchase(purchase);
     }
   }
 
-  /// Complete purchase (acknowledge + consume)
-  Future<void> completePurchase(PurchaseDetails purchase) async {
+  /// Handle a single purchase update
+  Future<void> _handlePurchase(PurchaseDetails purchase) async {
+    switch (purchase.status) {
+      case PurchaseStatus.purchased:
+      case PurchaseStatus.restored:
+        // Acknowledge — без этого Google Play отменит через 3 дня
+        if (purchase.pendingCompletePurchase) {
+          await _iap.completePurchase(purchase);
+        }
+
+        final token = _extractPurchaseToken(purchase);
+        _onPurchaseResult?.call(SubscriptionPurchaseResult(
+          success: true,
+          purchaseToken: token,
+          productId: purchase.productID,
+        ));
+        break;
+
+      case PurchaseStatus.error:
+        _onPurchaseResult?.call(SubscriptionPurchaseResult(
+          success: false,
+          error: purchase.error?.message ?? 'Purchase failed',
+        ));
+        break;
+
+      case PurchaseStatus.canceled:
+        _onPurchaseResult?.call(SubscriptionPurchaseResult(
+          success: false,
+          error: 'canceled',
+        ));
+        break;
+
+      case PurchaseStatus.pending:
+        // Pending — ждём следующего апдейта (напр. медленный платёж)
+        print('[BillingService] Purchase pending: ${purchase.productID}');
+        break;
+    }
+  }
+
+  /// Extract purchase token (platform-specific)
+  String? _extractPurchaseToken(PurchaseDetails purchase) {
     if (Platform.isAndroid) {
-      final androidAddition = _iap.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
-      
-      await _iap.completePurchase(purchase);
-      final consumeResult = await androidAddition.consumePurchase(purchase);
-      
-      if (consumeResult.responseCode != BillingResponse.ok) {
-        print('[BillingService] Consume failed: ${consumeResult.responseCode}');
+      final androidDetails = purchase as GooglePlayPurchaseDetails;
+      return androidDetails.billingClientPurchase.purchaseToken;
+    }
+    // iOS — serverVerificationData содержит receipt
+    return purchase.verificationData.serverVerificationData;
+  }
+
+  /// Purchase a subscription by base plan ID
+  ///
+  /// [basePlanId] — "01" (weekly) или "02" (monthly)
+  /// [onResult] — callback с результатом покупки
+  Future<void> purchaseSubscription({
+    required String basePlanId,
+    required Function(SubscriptionPurchaseResult) onResult,
+    String? userId,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    _onPurchaseResult = onResult;
+
+    try {
+      // queryProductDetails для подписки вернёт список
+      // GooglePlayProductDetails — по одному на каждый base plan
+      final response = await _iap.queryProductDetails(
+        {subscriptionProductId},
+      );
+
+      if (response.error != null) {
+        onResult(SubscriptionPurchaseResult(
+          success: false,
+          error: 'Failed to load product: ${response.error}',
+        ));
+        return;
       }
-    } else {
-      await _iap.completePurchase(purchase);
+
+      if (response.productDetails.isEmpty) {
+        onResult(const SubscriptionPurchaseResult(
+          success: false,
+          error: 'Subscription product not found in store',
+        ));
+        return;
+      }
+
+      // Найти ProductDetails для нужного base plan
+      final targetProduct = _findProductForBasePlan(
+        response.productDetails,
+        basePlanId,
+      );
+
+      if (targetProduct == null) {
+        onResult(SubscriptionPurchaseResult(
+          success: false,
+          error: 'Base plan $basePlanId not found',
+        ));
+        return;
+      }
+
+      final purchaseParam = PurchaseParam(
+        productDetails: targetProduct,
+        applicationUserName: userId,
+      );
+
+      await _iap.buyNonConsumable(purchaseParam: purchaseParam);
+    } catch (e) {
+      onResult(SubscriptionPurchaseResult(
+        success: false,
+        error: e.toString(),
+      ));
     }
   }
 
-  /// Restore purchases
-  Future<void> restorePurchases() async {
+  /// Найти ProductDetails для конкретного base plan
+  ///
+  /// queryProductDetails возвращает несколько GooglePlayProductDetails
+  /// для подписки — по одному на каждый offer/base plan.
+  /// Каждый имеет subscriptionIndex, через который достаём basePlanId.
+  ProductDetails? _findProductForBasePlan(
+    List<ProductDetails> products,
+    String basePlanId,
+  ) {
+    if (!Platform.isAndroid) {
+      // iOS — просто вернуть первый (один продукт = один plan)
+      return products.isNotEmpty ? products.first : null;
+    }
+
+    for (final product in products) {
+      if (product is GooglePlayProductDetails) {
+        final idx = product.subscriptionIndex;
+        if (idx != null) {
+          final offers =
+              product.productDetails.subscriptionOfferDetails;
+          if (offers != null && idx < offers.length) {
+            if (offers[idx].basePlanId == basePlanId) {
+              return product;
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Restore purchases (подписки)
+  Future<void> restorePurchases({
+    required Function(SubscriptionPurchaseResult) onResult,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    _onPurchaseResult = onResult;
     await _iap.restorePurchases();
   }
 
-  /// Get credit amount from product ID
-  static int getCreditAmountFromProductId(String productId) {
-    switch (productId) {
-      case credits10:
-        return 10;
-      case credits25:
-        return 25;
-      case credits50:
-        return 50;
-      default:
-        return 0;
-    }
-  }
-
-  /// Get interaction estimate (1 credit ≈ 1 interaction)
-  static int getInteractionsFromCredits(int credits) => credits;
-
-  /// Check if product is featured (middle package)
-  static bool isFeaturedProduct(String productId) => productId == credits25;
-
   void dispose() {
     _subscription?.cancel();
+    _onPurchaseResult = null;
     _isInitialized = false;
   }
 }
