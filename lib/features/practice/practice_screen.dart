@@ -10,11 +10,13 @@ import '../../services/user_service.dart';
 import '../../shared/navigation/dc_page_route.dart';
 import '../../shared/widgets/dc_header.dart';
 import '../../shared/widgets/dc_help_button.dart';
+import '../../shared/widgets/dc_history_button.dart';
 import '../../shared/widgets/dc_menu.dart';
 import '../../shared/widgets/dc_menu_button.dart';
 import '../../shared/widgets/dc_modal.dart';
 import '../open_chat/chat_screen.dart';
 import 'level_selection_screen.dart';
+import 'practice_history_screen.dart';
 
 class PracticeScreen extends StatefulWidget {
   const PracticeScreen({super.key});
@@ -220,6 +222,13 @@ class _PracticeScreenState extends State<PracticeScreen> {
               );
             },
           ),
+        ),
+
+        DCHistoryButton(
+          text: 'training history',
+          onTap: () => Navigator.of(context).push(DCPageRoute(
+            page: const PracticeHistoryScreen(),
+          )),
         ),
       ],
     );

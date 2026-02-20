@@ -1,3 +1,4 @@
+import '../data/models/training_attempt_preview.dart';
 import '../data/models/training_progress.dart';
 import '../data/repositories/practice_repository.dart';
 import 'user_service.dart';
@@ -49,5 +50,15 @@ class PracticeService {
   /// Сбросить кэш (например, при logout)
   void clear() {
     _progress = null;
+  }
+
+  /// Получить историю тренировок
+  Future<List<TrainingAttemptPreview>> getHistory() async {
+    return _repo.getHistory();
+  }
+
+  /// Удалить попытку из истории
+  Future<void> deleteAttempt(String attemptId) async {
+    await _repo.deleteAttempt(attemptId);
   }
 }
