@@ -24,6 +24,7 @@ class ConversationsRepository {
     required String submodeId,
     String? characterId,
     String language = 'en',
+    int? difficultyLevel,
   }) async {
     final response = await _apiClient.post(
       ApiEndpoints.conversationsGreeting,
@@ -40,11 +41,13 @@ class ConversationsRepository {
   /// 
   /// [submodeId] — режим (open_chat, first_contact, etc.)
   /// [characterId] — ID персонажа (обязателен для character modes)
+  /// [difficultyLevel] — уровень сложности 1–3 (только для training modes)
   /// [language] — язык беседы (default: en)
   /// [seedMessage] — greeting для сохранения в историю
   Future<Conversation> createConversation({
     required String submodeId,
     String? characterId,
+    int? difficultyLevel,
     String language = 'en',
     String? seedMessage,
   }) async {
@@ -53,6 +56,7 @@ class ConversationsRepository {
       data: {
         'submode_id': submodeId,
         if (characterId != null) 'character_id': characterId,
+        if (difficultyLevel != null) 'difficulty_level': difficultyLevel,
         'language': language,
         if (seedMessage != null) 'seed_message': seedMessage,
       },

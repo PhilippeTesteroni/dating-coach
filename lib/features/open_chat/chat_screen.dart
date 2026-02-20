@@ -23,6 +23,7 @@ class ChatScreen extends StatefulWidget {
   final String submodeId;
   final String? conversationId;
   final String title;
+  final int? difficultyLevel;
   /// Если задан — в хедере появляется кнопка "Done" / "Finish".
   /// Вызывается когда пользователь её нажимает.
   final VoidCallback? onFinish;
@@ -33,6 +34,7 @@ class ChatScreen extends StatefulWidget {
     this.submodeId = 'open_chat',
     this.conversationId,
     this.title = 'Open Chat',
+    this.difficultyLevel,
     this.onFinish,
   });
 
@@ -177,6 +179,7 @@ class _ChatScreenState extends State<ChatScreen> {
         final conversation = await _repository.createConversation(
           submodeId: widget.submodeId,
           characterId: characterId,
+          difficultyLevel: widget.difficultyLevel,
           language: 'en',
           seedMessage: _greetingContent,
         );
