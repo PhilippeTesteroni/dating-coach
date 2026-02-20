@@ -42,6 +42,7 @@ class _ChatScreenState extends State<ChatScreen> {
   late final ConversationsRepository _repository;
   
   Conversation? _conversation;
+  String? _greetingContent;
   bool _isLoading = true;
   bool _isVisible = false;
   bool _isSending = false;
@@ -62,6 +63,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    // Delete conversation only if it was created but user never replied
     if (_conversation != null && !_userSentMessage) {
       _repository.deleteConversation(_conversation!.id).catchError((_) {});
     }
@@ -96,17 +98,23 @@ class _ChatScreenState extends State<ChatScreen> {
           if (mounted) setState(() => _isVisible = true);
         });
       } else {
-        // New conversation: create immediately to get greeting
+        // New conversation: fetch greeting only — no DB write yet
         final characterId = widget.character.isCoach ? null : widget.character.id;
-        final conversation = await _repository.createConversation(
+        final greeting = await _repository.getGreeting(
           submodeId: widget.submodeId,
           characterId: characterId,
           language: 'en',
         );
+
         setState(() {
-          _conversation = conversation;
-          if (conversation.firstMessage != null) {
-            _messages.add(conversation.firstMessage!);
+          _greetingContent = greeting.isNotEmpty ? greeting : null;
+          if (_greetingContent != null) {
+            _messages.add(Message(
+              id: 'greeting_local',
+              role: MessageRole.assistant,
+              content: _greetingContent!,
+              createdAt: DateTime.now(),
+            ));
           }
           _isLoading = false;
         });
@@ -138,6 +146,25 @@ class _ChatScreenState extends State<ChatScreen> {
     if (!UserService().canSendMessage) {
       final subscribed = await DCCreditsPaywall.show(context);
       if (!subscribed) return;
+    }
+
+    // Create conversation on first user message if not yet created
+    if (_conversation == null) {
+      try {
+        final characterId = widget.character.isCoach ? null : widget.character.id;
+        final conversation = await _repository.createConversation(
+          submodeId: widget.submodeId,
+          characterId: characterId,
+          language: 'en',
+          seedMessage: _greetingContent,
+        );
+        setState(() => _conversation = conversation);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to start conversation')),
+        );
+        return;
+      }
     }
 
     // 1. Show user message with "sent" status (empty circle)

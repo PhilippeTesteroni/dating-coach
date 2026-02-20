@@ -4,10 +4,12 @@ import '../../shared/widgets/dc_scaffold.dart';
 import '../../shared/widgets/dc_menu.dart';
 import '../../shared/widgets/mode_list_item.dart';
 import '../../shared/navigation/dc_page_route.dart';
+import '../../services/characters_service.dart';
 import '../../services/user_service.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../open_chat/character_selection_screen.dart';
 import '../practice/practice_screen.dart';
+import '../understanding/understanding_screen.dart';
 
 /// Экран выбора режима для Dating Coach
 /// 
@@ -16,8 +18,20 @@ import '../practice/practice_screen.dart';
 /// - Practice
 /// - Understanding
 /// - Guided Reflection
-class ModeSelectionScreen extends StatelessWidget {
+class ModeSelectionScreen extends StatefulWidget {
   const ModeSelectionScreen({super.key});
+
+  @override
+  State<ModeSelectionScreen> createState() => _ModeSelectionScreenState();
+}
+
+class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Предзагрузка Хитча в кэш — чтобы UnderstandingScreen открывался мгновенно
+    CharactersService().getCoach().catchError((_) {});
+  }
 
   void _navigateWithOnboarding(BuildContext context, Widget destination) {
     if (!UserService().isProfileComplete) {
@@ -93,9 +107,7 @@ class ModeSelectionScreen extends StatelessWidget {
         ModeListItem(
           title: 'Understanding',
           subtitle: 'Looking at interactions and situations to understand what is going on.',
-          onTap: () {
-            // TODO: Navigate to Understanding
-          },
+          onTap: () => _navigateWithOnboarding(context, const UnderstandingScreen()),
         ),
         const SizedBox(height: 36),
         

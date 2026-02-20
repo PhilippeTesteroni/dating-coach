@@ -15,14 +15,6 @@ enum MessageReadStatus {
 }
 
 /// Баббл сообщения в чате
-///
-/// [text] — текст сообщения
-/// [isUser] — true для сообщений пользователя (справа)
-/// [avatarUrl] — URL аватара для assistant (слева)
-/// [characterName] — имя персонажа (показывается над первым сообщением)
-/// [showName] — показывать ли имя над сообщением
-/// [isTyping] — показать "Writing..." вместо текста
-/// [readStatus] — статус прочтения (sent/read) для user messages
 class DCChatBubble extends StatelessWidget {
   final String? text;
   final bool isUser;
@@ -88,14 +80,7 @@ class DCChatBubble extends StatelessWidget {
 
   List<Widget> _buildUserRow() {
     return [
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildBubble(),
-          if (readStatus != MessageReadStatus.none)
-            _buildReadIndicator(),
-        ],
-      ),
+      _buildBubble(),
       const SizedBox(width: 8),
       _buildUserAvatar(),
     ];
@@ -110,6 +95,17 @@ class DCChatBubble extends StatelessWidget {
   }
 
   Widget _buildBubble() {
+    if (isTyping) {
+      // No bubble — just animated "Writing..." text aligned with avatar center
+      return SizedBox(
+        height: 32, // match avatar height
+        child: const Align(
+          alignment: Alignment.centerLeft,
+          child: _AnimatedWritingText(),
+        ),
+      );
+    }
+
     return Container(
       constraints: const BoxConstraints(maxWidth: 260),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -117,7 +113,27 @@ class DCChatBubble extends StatelessWidget {
         color: isUser ? _userBubbleColor : _assistantBubbleColor,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: isTyping ? _buildTypingIndicator() : _buildText(),
+      child: _buildContent(),
+    );
+  }
+
+  Widget _buildContent() {
+    if (readStatus == MessageReadStatus.none || !isUser) {
+      return _buildText();
+    }
+
+    // User message with read status: check mark pinned bottom-right inside bubble
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2, right: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Flexible(child: _buildText()),
+          const SizedBox(width: 4),
+          _ReadStatusDot(status: readStatus),
+        ],
+      ),
     );
   }
 
@@ -127,24 +143,6 @@ class DCChatBubble extends StatelessWidget {
       style: AppTypography.bodyMedium.copyWith(
         color: AppColors.textPrimary,
       ),
-    );
-  }
-
-  Widget _buildTypingIndicator() {
-    return Text(
-      'Writing...',
-      style: AppTypography.bodyMedium.copyWith(
-        color: AppColors.textSecondary,
-        fontStyle: FontStyle.italic,
-      ),
-    );
-  }
-
-  /// Кружок read status под баблом пользователя
-  Widget _buildReadIndicator() {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, top: 4),
-      child: _ReadStatusDot(status: readStatus),
     );
   }
 
@@ -166,7 +164,7 @@ class DCChatBubble extends StatelessWidget {
 
   Widget _buildCharacterAvatar() {
     final avatar = _buildCharacterAvatarImage();
-    
+
     if (fullImageUrl == null || fullImageUrl!.isEmpty) {
       return avatar;
     }
@@ -232,24 +230,17 @@ class DCChatBubble extends StatelessWidget {
     );
   }
 
-  // Цвет баббла пользователя (светлый бежевый)
   static const Color _userBubbleColor = Color(0xFFE8E0D8);
-
-  // Цвет баббла ассистента (тёплый песочный)
   static const Color _assistantBubbleColor = Color(0xFFD4C4B5);
 }
 
-/// Анимированный кружок read status
-///
-/// sent → пустой контур (как на скрине 2)
-/// read → заполненный (как на скрине 1), с плавной анимацией заливки
+// ─── Read status check mark ─────────────────────────────────
+
+/// Галка статуса: серая при sent, персиково-оранжевая при read
 class _ReadStatusDot extends StatelessWidget {
   final MessageReadStatus status;
 
   const _ReadStatusDot({required this.status});
-
-  static const double _size = 10.0;
-  static const double _borderWidth = 1.5;
 
   @override
   Widget build(BuildContext context) {
@@ -259,55 +250,96 @@ class _ReadStatusDot extends StatelessWidget {
       tween: Tween(begin: 0.0, end: isRead ? 1.0 : 0.0),
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-      builder: (context, fillProgress, _) {
-        return CustomPaint(
-          size: const Size(_size, _size),
-          painter: _ReadDotPainter(
-            fillProgress: fillProgress,
-            color: AppColors.textPrimary,
-            borderWidth: _borderWidth,
-          ),
+      builder: (context, progress, _) {
+        final color = Color.lerp(
+          AppColors.textSecondary,
+          AppColors.action,
+          progress,
+        )!;
+        return Icon(
+          Icons.check,
+          size: 14,
+          color: color,
         );
       },
     );
   }
 }
 
-/// Рисует кружок: контур всегда, заливка по fillProgress (0.0 → 1.0)
-class _ReadDotPainter extends CustomPainter {
-  final double fillProgress;
-  final Color color;
-  final double borderWidth;
+// ─── Animated "Writing..." with cascading dots ──────────────
 
-  _ReadDotPainter({
-    required this.fillProgress,
-    required this.color,
-    required this.borderWidth,
-  });
+/// "Writing" + три точки, которые переливаются от первой к последней
+class _AnimatedWritingText extends StatefulWidget {
+  const _AnimatedWritingText();
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final outerRadius = size.width / 2;
-    final innerRadius = outerRadius - borderWidth;
+  State<_AnimatedWritingText> createState() => _AnimatedWritingTextState();
+}
 
-    // Контур — всегда
-    final borderPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = borderWidth;
-    canvas.drawCircle(center, outerRadius - borderWidth / 2, borderPaint);
+class _AnimatedWritingTextState extends State<_AnimatedWritingText>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
 
-    // Заливка — по прогрессу
-    if (fillProgress > 0.0) {
-      final fillPaint = Paint()
-        ..color = color.withOpacity(fillProgress)
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(center, innerRadius * fillProgress, fillPaint);
-    }
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
   }
 
   @override
-  bool shouldRepaint(_ReadDotPainter oldDelegate) =>
-      fillProgress != oldDelegate.fillProgress;
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final baseStyle = AppTypography.bodyMedium.copyWith(
+      color: AppColors.textSecondary,
+      fontStyle: FontStyle.italic,
+    );
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Writing', style: baseStyle),
+            _buildDot(0, baseStyle),
+            _buildDot(1, baseStyle),
+            _buildDot(2, baseStyle),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Each dot lights up in sequence: 0→1→2 over the animation cycle
+  Widget _buildDot(int index, TextStyle baseStyle) {
+    // Each dot occupies 1/3 of the cycle, with overlap for smoothness
+    final dotStart = index * 0.25;
+    final dotEnd = dotStart + 0.4;
+
+    double opacity;
+    final t = _controller.value;
+    if (t >= dotStart && t <= dotEnd) {
+      // Fade in then out within the dot's window
+      final local = (t - dotStart) / (dotEnd - dotStart);
+      opacity = local <= 0.5
+          ? (local * 2.0) // 0→1
+          : (1.0 - (local - 0.5) * 2.0); // 1→0
+      opacity = 0.3 + opacity * 0.7; // range: 0.3 – 1.0
+    } else {
+      opacity = 0.3;
+    }
+
+    return Opacity(
+      opacity: opacity,
+      child: Text('.', style: baseStyle),
+    );
+  }
 }

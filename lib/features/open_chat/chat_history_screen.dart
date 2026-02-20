@@ -14,9 +14,19 @@ import '../../shared/widgets/dc_menu.dart';
 import '../../shared/widgets/dc_menu_button.dart';
 import 'chat_screen.dart';
 
-/// Экран истории чатов для Open Chat
+/// Экран истории чатов
+///
+/// [submodeIds] — если передан, показывает чаты всех указанных сабмодов (coach-режим).
+/// Если не передан — показывает open_chat (character-режим).
 class ChatHistoryScreen extends StatefulWidget {
-  const ChatHistoryScreen({super.key});
+  final List<String>? submodeIds;
+  final String title;
+
+  const ChatHistoryScreen({
+    super.key,
+    this.submodeIds,
+    this.title = 'Open Chat',
+  });
 
   @override
   State<ChatHistoryScreen> createState() => _ChatHistoryScreenState();
@@ -25,6 +35,7 @@ class ChatHistoryScreen extends StatefulWidget {
 class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
   List<ConversationPreview> _conversations = [];
   Map<String, Character> _charactersMap = {};
+  Character? _coach;
   bool _isLoading = true;
   String? _error;
 
@@ -36,41 +47,77 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
 
   Future<void> _load() async {
     try {
-      // Load characters + conversations in parallel
-      final results = await Future.wait([
-        CharactersService().getCharacters(preferredGender: 'all'),
-        ConversationsRepository(UserService().apiClient)
-            .getConversations('open_chat'),
-      ]);
+      final isCoachMode = widget.submodeIds != null;
 
-      final characters = results[0] as List<Character>;
-      final conversations = results[1] as List<ConversationPreview>;
+      if (isCoachMode) {
+        final ids = widget.submodeIds!;
+        // Грузим Хитча + параллельно разговоры всех сабмодов
+        final futures = <Future>[
+          CharactersService().getCoach(),
+          ...ids.map((id) => ConversationsRepository(UserService().apiClient)
+              .getConversations(id)),
+        ];
+        final results = await Future.wait(futures);
 
-      // Build lookup map
-      final map = <String, Character>{};
-      for (final c in characters) {
-        map[c.id] = c;
-      }
+        final coach = results[0] as Character;
+        final allConversations = <ConversationPreview>[];
+        for (int i = 1; i < results.length; i++) {
+          allConversations.addAll(results[i] as List<ConversationPreview>);
+        }
 
-      // Precache thumbs
-      if (mounted) {
-        final thumbs = conversations
-            .where((c) => c.characterId != null && map.containsKey(c.characterId))
-            .map((c) => map[c.characterId]!.thumbUrl)
-            .toSet();
-        await Future.wait(
-          thumbs.map((url) => precacheImage(
-            CachedNetworkImageProvider(url),
+        // Только coach-чаты, отсортированные по дате
+        final coachConversations = allConversations
+            .where((c) => c.actorType.name == 'coach')
+            .toList()
+          ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
+        if (mounted) {
+          await precacheImage(
+            CachedNetworkImageProvider(coach.thumbUrl),
             context,
-          )),
-        );
-      }
+          );
+        }
 
-      setState(() {
-        _conversations = conversations;
-        _charactersMap = map;
-        _isLoading = false;
-      });
+        setState(() {
+          _coach = coach;
+          _conversations = coachConversations;
+          _isLoading = false;
+        });
+      } else {
+        // Character-режим: грузим персонажей + разговоры
+        final results = await Future.wait([
+          CharactersService().getCharacters(preferredGender: 'all'),
+          ConversationsRepository(UserService().apiClient)
+              .getConversations('open_chat'),
+        ]);
+
+        final characters = results[0] as List<Character>;
+        final conversations = results[1] as List<ConversationPreview>;
+
+        final map = <String, Character>{};
+        for (final c in characters) {
+          map[c.id] = c;
+        }
+
+        if (mounted) {
+          final thumbs = conversations
+              .where((c) => c.characterId != null && map.containsKey(c.characterId))
+              .map((c) => map[c.characterId]!.thumbUrl)
+              .toSet();
+          await Future.wait(
+            thumbs.map((url) => precacheImage(
+              CachedNetworkImageProvider(url),
+              context,
+            )),
+          );
+        }
+
+        setState(() {
+          _conversations = conversations;
+          _charactersMap = map;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       debugPrint('Error loading chat history: $e');
       setState(() {
@@ -81,6 +128,22 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
   }
 
   void _onConversationTap(ConversationPreview preview) {
+    // Coach-режим
+    if (_coach != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            character: _coach!,
+            submodeId: preview.submodeId,
+            conversationId: preview.id,
+            title: widget.title,
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Character-режим
     final character = _charactersMap[preview.characterId];
     if (character == null) return;
 
@@ -130,7 +193,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
         child: Column(
           children: [
             DCHeader(
-              title: 'Open Chat',
+              title: widget.title,
               leading: const DCBackButton(),
               trailing: DCMenuButton(
                 onTap: () => showDCMenu(context, isSubscribed: UserService().isSubscribed),
@@ -179,7 +242,8 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 20),
       itemBuilder: (context, index) {
         final preview = _conversations[index];
-        final character = _charactersMap[preview.characterId];
+        // Coach-режим: всегда Хитч; Character-режим: по characterId
+        final character = _coach ?? _charactersMap[preview.characterId];
         return Dismissible(
           key: ValueKey(preview.id),
           direction: DismissDirection.endToStart,

@@ -14,6 +14,7 @@ class CharactersService {
 
   List<Character>? _characters;
   String? _loadedForGender;
+  Character? _coach;
   ApiClient? _apiClient;
 
   /// Инициализация с ApiClient
@@ -57,6 +58,7 @@ class CharactersService {
   void invalidate() {
     _characters = null;
     _loadedForGender = null;
+    _coach = null;
   }
 
   /// Проверить, закэшированы ли персонажи для данного gender
@@ -66,4 +68,24 @@ class CharactersService {
 
   /// Получить закэшированных персонажей (без загрузки)
   List<Character>? get cachedCharacters => _characters;
+
+  /// Получить коуча Хитча (из кэша или с сервера)
+  Future<Character> getCoach() async {
+    if (_coach != null) return _coach!;
+
+    if (_apiClient == null) {
+      throw StateError('CharactersService not initialized. Call init() first.');
+    }
+
+    final repo = CharactersRepository(_apiClient!);
+    final allCharacters = await repo.getCharacters(preferredGender: 'all');
+
+    final coach = allCharacters.firstWhere(
+      (c) => c.isCoach,
+      orElse: () => throw StateError('Coach character (Hitch) not found'),
+    );
+
+    _coach = coach;
+    return _coach!;
+  }
 }

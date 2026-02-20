@@ -87,6 +87,12 @@ abstract class ApiEndpoints {
   
   // ============ Conversations ============
   
+  /// Получить greeting без создания беседы (stateless)
+  /// POST /api/v1/conversations/greeting
+  /// Body: { "submode_id": "open_chat", "character_id": "anna", "language": "en" }
+  /// Response: { "content": "..." }
+  static const String conversationsGreeting = '/api/v1/conversations/greeting';
+
   /// Создать новую беседу
   /// POST /api/v1/conversations
   /// Body: { "submode_id": "open_chat", "character_id": "anna", "language": "ru" }

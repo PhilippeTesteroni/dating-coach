@@ -19,15 +19,34 @@ class ConversationsRepository {
     return list.map((j) => ConversationPreview.fromJson(j)).toList();
   }
 
+  /// Получить greeting без создания беседы
+  Future<String> getGreeting({
+    required String submodeId,
+    String? characterId,
+    String language = 'en',
+  }) async {
+    final response = await _apiClient.post(
+      ApiEndpoints.conversationsGreeting,
+      data: {
+        'submode_id': submodeId,
+        if (characterId != null) 'character_id': characterId,
+        'language': language,
+      },
+    );
+    return response['content'] as String? ?? '';
+  }
+
   /// Создать новую беседу
   /// 
   /// [submodeId] — режим (open_chat, first_contact, etc.)
   /// [characterId] — ID персонажа (обязателен для character modes)
   /// [language] — язык беседы (default: en)
+  /// [seedMessage] — greeting для сохранения в историю
   Future<Conversation> createConversation({
     required String submodeId,
     String? characterId,
     String language = 'en',
+    String? seedMessage,
   }) async {
     final response = await _apiClient.post(
       ApiEndpoints.conversations,
@@ -35,6 +54,7 @@ class ConversationsRepository {
         'submode_id': submodeId,
         if (characterId != null) 'character_id': characterId,
         'language': language,
+        if (seedMessage != null) 'seed_message': seedMessage,
       },
     );
     return Conversation.fromJson(response);
