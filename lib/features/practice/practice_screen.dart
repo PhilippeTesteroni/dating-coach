@@ -183,7 +183,16 @@ class _PracticeScreenState extends State<PracticeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
-        Text('What would you like to look at?', style: AppTypography.titleLarge),
+        Text.rich(
+          TextSpan(
+            style: AppTypography.titleLarge,
+            children: [
+              const TextSpan(text: 'What do you want to '),
+              TextSpan(text: 'practice', style: AppTypography.titleLargeAccent),
+              const TextSpan(text: ' today?'),
+            ],
+          ),
+        ),
         const SizedBox(height: 32),
 
         // Баннер онбординга — показывается пока не пройден pre_training
