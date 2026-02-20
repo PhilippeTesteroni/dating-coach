@@ -9,8 +9,10 @@ import '../../services/practice_service.dart';
 import '../../services/user_service.dart';
 import '../../shared/navigation/dc_page_route.dart';
 import '../../shared/widgets/dc_header.dart';
+import '../../shared/widgets/dc_help_button.dart';
 import '../../shared/widgets/dc_menu.dart';
 import '../../shared/widgets/dc_menu_button.dart';
+import '../../shared/widgets/dc_modal.dart';
 import '../open_chat/chat_screen.dart';
 import 'level_selection_screen.dart';
 
@@ -60,6 +62,37 @@ class _PracticeScreenState extends State<PracticeScreen> {
         });
       }
     }
+  }
+
+  void _showHelpModal() {
+    DCModal.show(
+      context: context,
+      title: 'Practice',
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Practice is a structured space for working through situations over time.',
+            style: AppTypography.bodyMedium.copyWith(color: AppColors.textPrimary),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Each step unfolds gradually, allowing you to notice patterns and reactions as they appear.',
+            style: AppTypography.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'There is no right pace and no goal to complete everything.',
+            style: AppTypography.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'You can move forward when it feels relevant, or pause at any point.',
+            style: AppTypography.bodyMedium,
+          ),
+        ],
+      ),
+    );
   }
 
   void _onPreTrainingTap() {
@@ -119,6 +152,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   Widget _buildHeader() {
     return DCHeader(
       title: 'Training',
+      leading: DCHelpButton(onTap: _showHelpModal),
       trailing: DCMenuButton(
         onTap: () => showDCMenu(context, isSubscribed: UserService().isSubscribed),
       ),
