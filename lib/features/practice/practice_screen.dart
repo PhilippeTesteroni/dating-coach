@@ -103,6 +103,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
       page: ChatScreen(
         character: _coach!,
         submodeId: 'pre_training',
+        conversationId: _progress?.preTrainingConversationId,
         title: 'Practice',
         onFinish: _onPreTrainingFinish,
       ),

@@ -50,16 +50,19 @@ class TrainingState {
 /// Полный прогресс пользователя
 class TrainingProgress {
   final bool onboardingComplete;
+  final String? preTrainingConversationId;
   final List<TrainingState> trainings;
 
   const TrainingProgress({
     required this.onboardingComplete,
+    this.preTrainingConversationId,
     required this.trainings,
   });
 
   factory TrainingProgress.fromJson(Map<String, dynamic> json) {
     return TrainingProgress(
       onboardingComplete: json['onboarding_complete'] as bool,
+      preTrainingConversationId: json['pre_training_conversation_id'] as String?,
       trainings: (json['trainings'] as List)
           .map((t) => TrainingState.fromJson(t))
           .toList(),
