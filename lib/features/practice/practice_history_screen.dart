@@ -80,15 +80,7 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
         conversationId: conv.conversationId,
         difficultyLevel: conv.difficultyLevel,
         title: conv.trainingTitle,
-        attemptPreview: TrainingAttemptPreview(
-          attemptId: conv.attemptId ?? '',
-          conversationId: conv.conversationId,
-          submodeId: conv.submodeId,
-          difficultyLevel: conv.difficultyLevel ?? 1,
-          status: conv.status ?? '',
-          createdAt: conv.createdAt,
-          feedback: conv.feedback,
-        ),
+        attemptPreview: conv,
       ),
     ));
   }

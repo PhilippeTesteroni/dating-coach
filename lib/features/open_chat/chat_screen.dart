@@ -31,7 +31,7 @@ class ChatScreen extends StatefulWidget {
   final ValueChanged<String?>? onFinish;
   /// Если задан — чат открыт из истории тренировок.
   /// Кнопка в хедере: "Results" если есть feedback, "Finish" если нет.
-  final TrainingAttemptPreview? attemptPreview;
+  final TrainingConversationPreview? attemptPreview;
 
   const ChatScreen({
     super.key,
@@ -364,12 +364,12 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void _openAttemptResult(TrainingAttemptPreview attempt) {
+  void _openAttemptResult(TrainingConversationPreview attempt) {
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => ResultScreen(
         conversationId: attempt.conversationId,
         submodeId: attempt.submodeId,
-        difficultyLevel: attempt.difficultyLevel,
+        difficultyLevel: attempt.difficultyLevel ?? 1,
         trainingTitle: attempt.trainingTitle,
         onDone: () => Navigator.of(context).pop(),
         initialResult: attempt.feedback != null
