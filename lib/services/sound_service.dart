@@ -19,8 +19,8 @@ class SoundService {
       _pool = Soundpool.fromOptions(
         options: const SoundpoolOptions(maxStreams: 2),
       );
-      final sendData = await rootBundle.load('assets/sounds/outcome_message.wav');
-      final receiveData = await rootBundle.load('assets/sounds/income_message.wav');
+      final sendData = await rootBundle.load('assets/sounds/income_message.wav');
+      final receiveData = await rootBundle.load('assets/sounds/outcome_message.wav');
       _sendSoundId = await _pool!.load(sendData);
       _receiveSoundId = await _pool!.load(receiveData);
       debugPrint('🔊 SoundService ready: send=$_sendSoundId receive=$_receiveSoundId');
@@ -36,7 +36,7 @@ class SoundService {
     debugPrint('🔊 playSend');
     final streamId = await _pool!.play(_sendSoundId);
     if (streamId > 0) {
-      await _pool!.setVolume(streamId: streamId, volume: 0.35);
+      await _pool!.setVolume(streamId: streamId, volume: 0.28);
     }
   }
 
@@ -46,7 +46,7 @@ class SoundService {
     debugPrint('🔊 playReceive');
     final streamId = await _pool!.play(_receiveSoundId);
     if (streamId > 0) {
-      await _pool!.setVolume(streamId: streamId, volume: 0.35);
+      await _pool!.setVolume(streamId: streamId, volume: 0.28);
     }
   }
 }
