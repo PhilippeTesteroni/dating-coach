@@ -10,6 +10,7 @@ import '../../data/models/message.dart';
 import '../../data/models/conversation.dart';
 import '../../data/repositories/conversations_repository.dart';
 import '../../services/user_service.dart';
+import '../../services/sound_service.dart';
 import '../../shared/widgets/dc_back_button.dart';
 import '../../shared/widgets/dc_chat_bubble.dart';
 import '../../shared/widgets/dc_chat_input.dart';
@@ -181,6 +182,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _userSentMessage = true;
       _lastMessageReadStatus = MessageReadStatus.sent;
     });
+    SoundService().playSend();
     _scrollToBottom();
 
     // 3. Fire API request in background immediately
@@ -231,6 +233,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _showTyping = false;
         _lastMessageReadStatus = MessageReadStatus.none;
       });
+      SoundService().playReceive();
       _scrollToBottom();
 
       UserService().loadSubscriptionStatus();
