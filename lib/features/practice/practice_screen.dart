@@ -277,7 +277,7 @@ class _OnboardingBannerState extends State<_OnboardingBanner> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Have a short conversation with Hitch to unlock all trainings.',
+                    'Have a short conversation with Hitch, your coach, to unlock all trainings.',
                     style: AppTypography.bodySmall,
                   ),
                 ],
