@@ -55,7 +55,7 @@ class LevelSelectionScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             DCHeader(
-              title: 'Training',
+              title: 'Practice',
               leading: const DCBackButton(),
               trailing: DCMenuButton(
                 onTap: () => showDCMenu(context, isSubscribed: UserService().isSubscribed),

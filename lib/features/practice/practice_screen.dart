@@ -101,7 +101,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
       page: ChatScreen(
         character: _coach!,
         submodeId: 'pre_training',
-        title: 'Training',
+        title: 'Practice',
         onFinish: _onPreTrainingFinish,
       ),
     ));
@@ -151,7 +151,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
 
   Widget _buildHeader() {
     return DCHeader(
-      title: 'Training',
+      title: 'Practice',
       leading: DCHelpButton(onTap: _showHelpModal),
       trailing: DCMenuButton(
         onTap: () => showDCMenu(context, isSubscribed: UserService().isSubscribed),
