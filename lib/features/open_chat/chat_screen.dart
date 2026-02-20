@@ -8,6 +8,7 @@ import '../../data/api/api_client.dart';
 import '../../data/models/character.dart';
 import '../../data/models/message.dart';
 import '../../data/models/conversation.dart';
+import '../../data/models/training_attempt_preview.dart';
 import '../../data/repositories/conversations_repository.dart';
 import '../../services/user_service.dart';
 import '../../services/sound_service.dart';
@@ -16,6 +17,7 @@ import '../../shared/widgets/dc_chat_bubble.dart';
 import '../../shared/widgets/dc_chat_input.dart';
 import '../../shared/widgets/dc_credits_paywall.dart';
 import '../../shared/widgets/dc_header.dart';
+import '../practice/result_screen.dart';
 
 /// Экран чата с персонажем
 class ChatScreen extends StatefulWidget {
@@ -27,6 +29,9 @@ class ChatScreen extends StatefulWidget {
   /// Если задан — в хедере появляется кнопка "Finish" / "Ready".
   /// Вызывается с текущим conversationId (null если разговор ещё не создан).
   final ValueChanged<String?>? onFinish;
+  /// Если задан — чат открыт из истории тренировок.
+  /// Кнопка в хедере: "Results" если есть feedback, "Finish" если нет.
+  final TrainingAttemptPreview? attemptPreview;
 
   const ChatScreen({
     super.key,
@@ -36,6 +41,7 @@ class ChatScreen extends StatefulWidget {
     this.title = 'Open Chat',
     this.difficultyLevel,
     this.onFinish,
+    this.attemptPreview,
   });
 
   @override
@@ -313,6 +319,26 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildHeader() {
+    // История тренировок: кнопка Results (есть feedback) или Finish (нет feedback)
+    if (widget.attemptPreview != null) {
+      final attempt = widget.attemptPreview!;
+      final hasResult = attempt.feedback != null;
+      return DCHeader(
+        title: widget.title,
+        leading: const DCBackButton(),
+        trailing: GestureDetector(
+          onTap: () => _openAttemptResult(attempt),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              hasResult ? 'Results' : 'Finish',
+              style: AppTypography.buttonAccent.copyWith(color: AppColors.action),
+            ),
+          ),
+        ),
+      );
+    }
+
     // Кнопка Finish: для тренировок — только после первого сообщения юзера,
     // для pre_training (нет difficultyLevel) — сразу.
     final showFinish = widget.onFinish != null &&
@@ -336,6 +362,27 @@ class _ChatScreenState extends State<ChatScreen> {
             )
           : null,
     );
+  }
+
+  void _openAttemptResult(TrainingAttemptPreview attempt) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => ResultScreen(
+        conversationId: attempt.conversationId,
+        submodeId: attempt.submodeId,
+        difficultyLevel: attempt.difficultyLevel,
+        trainingTitle: attempt.trainingTitle,
+        onDone: () => Navigator.of(context).pop(),
+        initialResult: attempt.feedback != null
+            ? {
+                'status': attempt.status,
+                'feedback': {
+                  'observed': attempt.feedback!.observed,
+                  'interpretation': attempt.feedback!.interpretation,
+                },
+              }
+            : null,
+      ),
+    ));
   }
 
   Widget _buildBody() {

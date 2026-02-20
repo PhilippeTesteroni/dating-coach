@@ -80,7 +80,7 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
         conversationId: attempt.conversationId,
         difficultyLevel: attempt.difficultyLevel,
         title: attempt.trainingTitle,
-        // attemptPreview: attempt,  // TODO: TASK 7
+        attemptPreview: attempt,
       ),
     ));
   }
@@ -93,7 +93,15 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
         difficultyLevel: attempt.difficultyLevel,
         trainingTitle: attempt.trainingTitle,
         onDone: () => Navigator.of(context).pop(),
-        // initialResult: ...,  // TODO: TASK 8
+        initialResult: attempt.feedback != null
+            ? {
+                'status': attempt.status,
+                'feedback': {
+                  'observed': attempt.feedback!.observed,
+                  'interpretation': attempt.feedback!.interpretation,
+                },
+              }
+            : null,
       ),
     ));
   }

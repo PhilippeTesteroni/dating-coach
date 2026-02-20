@@ -20,6 +20,9 @@ class ResultScreen extends StatefulWidget {
   final int difficultyLevel;
   final String trainingTitle;
   final VoidCallback onDone;
+  /// Если передан — пропускает вызов evaluate и сразу показывает эти данные.
+  /// Формат: { 'status': 'pass'|'fail', 'feedback': { 'observed': [...], 'interpretation': [...] } }
+  final Map<String, dynamic>? initialResult;
 
   const ResultScreen({
     super.key,
@@ -28,6 +31,7 @@ class ResultScreen extends StatefulWidget {
     required this.difficultyLevel,
     required this.trainingTitle,
     required this.onDone,
+    this.initialResult,
   });
 
   @override
@@ -46,7 +50,17 @@ class _ResultScreenState extends State<ResultScreen> {
   @override
   void initState() {
     super.initState();
-    _evaluate();
+    // Если переданы готовые данные — не вызываем evaluate
+    if (widget.initialResult != null) {
+      final result = widget.initialResult!;
+      final feedback = result['feedback'] as Map<String, dynamic>? ?? {};
+      _status = result['status'] as String? ?? 'fail';
+      _observed = List<String>.from(feedback['observed'] as List? ?? []);
+      _interpretation = List<String>.from(feedback['interpretation'] as List? ?? []);
+      _isLoading = false;
+    } else {
+      _evaluate();
+    }
   }
 
   Future<void> _evaluate() async {
