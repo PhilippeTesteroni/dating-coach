@@ -20,12 +20,14 @@ class ChatScreen extends StatefulWidget {
   final Character character;
   final String submodeId;
   final String? conversationId;
+  final String title;
 
   const ChatScreen({
     super.key,
     required this.character,
     this.submodeId = 'open_chat',
     this.conversationId,
+    this.title = 'Open Chat',
   });
 
   @override
@@ -79,22 +81,24 @@ class _ChatScreenState extends State<ChatScreen> {
           _isLoading = false;
         });
       } else {
-        // New conversation
+        // New conversation: create immediately to get greeting
+        final characterId = widget.character.isCoach ? null : widget.character.id;
         final conversation = await _repository.createConversation(
           submodeId: widget.submodeId,
-          characterId: widget.character.id,
+          characterId: characterId,
           language: 'en',
         );
-        
         setState(() {
           _conversation = conversation;
-          _isLoading = false;
           if (conversation.firstMessage != null) {
             _messages.add(conversation.firstMessage!);
           }
+          _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('❌ _initConversation error: $e');
+      debugPrint('❌ Stack trace: $stackTrace');
       setState(() {
         _error = 'Failed to start conversation';
         _isLoading = false;
@@ -107,7 +111,7 @@ class _ChatScreenState extends State<ChatScreen> {
       Duration(milliseconds: minMs + _random.nextInt(maxMs - minMs));
 
   Future<void> _sendMessage(String text) async {
-    if (_conversation == null || _isSending) return;
+    if (_isSending) return;
 
     // Check subscription / free-tier limit before sending
     if (!UserService().canSendMessage) {
@@ -130,7 +134,7 @@ class _ChatScreenState extends State<ChatScreen> {
     });
     _scrollToBottom();
 
-    // 2. Fire API request in background immediately
+    // 3. Fire API request in background immediately
     final apiFuture = _repository.sendMessage(
       conversationId: _conversation!.id,
       content: text,
@@ -146,18 +150,28 @@ class _ChatScreenState extends State<ChatScreen> {
     // 4. Read → Start typing: random 500–2000ms
     await Future.delayed(_randomDelay(500, 2000));
     if (!mounted) return;
+    final typingStartedAt = DateTime.now();
     setState(() {
       _showTyping = true;
     });
     _scrollToBottom();
 
-    // 5. Typing holds for min random 1500–4000ms, AND waits for API
-    final typingMinFuture = Future.delayed(_randomDelay(1500, 4000));
-
+    // 5. Wait for API, then hold typing based on response length
     try {
-      // Wait for both: API response + min typing time
       final result = await apiFuture;
-      await typingMinFuture;
+
+      if (!mounted) return;
+
+      // Calculate typing duration: ~4 chars/sec, clamp 1.5s – 8s
+      final responseLength = result.assistantMessage.content.length;
+      final typingMs = (responseLength / 4.0 * 1000).round().clamp(1500, 8000);
+
+      // Subtract time already spent showing "Writing..."
+      final elapsed = DateTime.now().difference(typingStartedAt).inMilliseconds;
+      final remainingMs = typingMs - elapsed;
+      if (remainingMs > 0) {
+        await Future.delayed(Duration(milliseconds: remainingMs));
+      }
 
       if (!mounted) return;
 
@@ -222,7 +236,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildHeader() {
     return DCHeader(
-      title: 'Open Chat',
+      title: widget.title,
       leading: const DCBackButton(),
     );
   }
@@ -300,10 +314,14 @@ class _ChatScreenState extends State<ChatScreen> {
         final isFirstAssistantMessage = !message.isUser &&
             (reversedIndex == 0 || _messages.take(reversedIndex).every((m) => m.isUser));
 
-        // Read status only for the last user message while sending
-        final isLastUserMessage = message.isUser &&
-            reversedIndex == _messages.length - 1 &&
-            _isSending;
+        // Read status for user messages:
+        // - Last user message while sending: animated sent → read
+        // - All other user messages: always read (bot already "read" them)
+        MessageReadStatus readStatus = MessageReadStatus.none;
+        if (message.isUser) {
+          final isLastUserMsg = reversedIndex == _messages.length - 1 && _isSending;
+          readStatus = isLastUserMsg ? _lastMessageReadStatus : MessageReadStatus.read;
+        }
 
         return DCChatBubble(
           text: message.content,
@@ -312,9 +330,7 @@ class _ChatScreenState extends State<ChatScreen> {
           fullImageUrl: message.isUser ? null : widget.character.avatarUrl,
           characterName: widget.character.name,
           showName: isFirstAssistantMessage,
-          readStatus: isLastUserMessage
-              ? _lastMessageReadStatus
-              : MessageReadStatus.none,
+          readStatus: readStatus,
         );
       },
     );
@@ -323,7 +339,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildFooter() {
     return DCChatInput(
       onSend: _sendMessage,
-      enabled: !_isSending && _conversation != null,
+      enabled: !_isSending,
     );
   }
 }
