@@ -36,15 +36,15 @@ class PracticeRepository {
     );
   }
 
-  /// Получить историю тренировок
-  Future<List<TrainingAttemptPreview>> getHistory() async {
+  /// Получить историю тренировочных разговоров
+  Future<List<TrainingConversationPreview>> getHistory() async {
     final response = await _apiClient.get(ApiEndpoints.practiceHistory);
-    final list = response['attempts'] as List;
-    return list.map((j) => TrainingAttemptPreview.fromJson(j as Map<String, dynamic>)).toList();
+    final list = response['conversations'] as List;
+    return list.map((j) => TrainingConversationPreview.fromJson(j as Map<String, dynamic>)).toList();
   }
 
-  /// Удалить попытку тренировки из истории
-  Future<void> deleteAttempt(String attemptId) async {
-    await _apiClient.delete(ApiEndpoints.practiceDeleteAttempt(attemptId));
+  /// Удалить тренировочный разговор из истории
+  Future<void> deleteConversation(String conversationId) async {
+    await _apiClient.delete(ApiEndpoints.practiceDeleteConversation(conversationId));
   }
 }

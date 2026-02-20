@@ -17,7 +17,6 @@ import 'result_screen.dart';
 
 const _levelLabels = ['Easy', 'Medium', 'Hard'];
 
-/// Экран истории тренировок
 class PracticeHistoryScreen extends StatefulWidget {
   const PracticeHistoryScreen({super.key});
 
@@ -28,7 +27,7 @@ class PracticeHistoryScreen extends StatefulWidget {
 class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
   final _service = PracticeService();
 
-  List<TrainingAttemptPreview> _attempts = [];
+  List<TrainingConversationPreview> _conversations = [];
   Character? _coach;
   bool _isLoading = true;
   String? _error;
@@ -48,7 +47,7 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
       ]);
 
       final coach = results[0] as Character;
-      final attempts = results[1] as List<TrainingAttemptPreview>;
+      final conversations = results[1] as List<TrainingConversationPreview>;
 
       if (mounted) {
         await precacheImage(CachedNetworkImageProvider(coach.thumbUrl), context);
@@ -56,7 +55,7 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
 
       setState(() {
         _coach = coach;
-        _attempts = attempts;
+        _conversations = conversations;
         _isLoading = false;
       });
     } catch (e) {
@@ -64,61 +63,68 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
     }
   }
 
-  void _onAttemptTap(TrainingAttemptPreview attempt) {
+  void _onTap(TrainingConversationPreview conv) {
     if (_coach == null) return;
 
-    // Если нет conversation — сразу показываем результат (или пустой экран)
-    if (attempt.conversationId == null) {
-      _openResult(attempt);
+    // Если уже оценён — показываем результат сразу
+    if (conv.isEvaluated) {
+      _openResult(conv);
       return;
     }
 
+    // Иначе — открываем чат (продолжить или посмотреть незаконченный)
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => ChatScreen(
         character: _coach!,
-        submodeId: attempt.submodeId,
-        conversationId: attempt.conversationId,
-        difficultyLevel: attempt.difficultyLevel,
-        title: attempt.trainingTitle,
-        attemptPreview: attempt,
+        submodeId: conv.submodeId,
+        conversationId: conv.conversationId,
+        difficultyLevel: conv.difficultyLevel,
+        title: conv.trainingTitle,
+        attemptPreview: TrainingAttemptPreview(
+          attemptId: conv.attemptId ?? '',
+          conversationId: conv.conversationId,
+          submodeId: conv.submodeId,
+          difficultyLevel: conv.difficultyLevel ?? 1,
+          status: conv.status ?? '',
+          createdAt: conv.createdAt,
+          feedback: conv.feedback,
+        ),
       ),
     ));
   }
 
-  void _openResult(TrainingAttemptPreview attempt) {
+  void _openResult(TrainingConversationPreview conv) {
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => ResultScreen(
-        conversationId: attempt.conversationId,
-        submodeId: attempt.submodeId,
-        difficultyLevel: attempt.difficultyLevel,
-        trainingTitle: attempt.trainingTitle,
+        conversationId: conv.conversationId,
+        submodeId: conv.submodeId,
+        difficultyLevel: conv.difficultyLevel ?? 1,
+        trainingTitle: conv.trainingTitle,
         onDone: () => Navigator.of(context).pop(),
-        initialResult: attempt.feedback != null
-            ? {
-                'status': attempt.status,
-                'feedback': {
-                  'observed': attempt.feedback!.observed,
-                  'interpretation': attempt.feedback!.interpretation,
-                },
-              }
-            : null,
+        initialResult: {
+          'status': conv.status,
+          'feedback': {
+            'observed': conv.feedback?.observed ?? [],
+            'interpretation': conv.feedback?.interpretation ?? [],
+          },
+        },
       ),
     ));
   }
 
-  Future<bool> _confirmDelete(TrainingAttemptPreview attempt) async {
+  Future<bool> _confirmDelete(TrainingConversationPreview conv) async {
     try {
       final confirmed = await DCConfirmModal.show(
         context: context,
-        title: 'Delete attempt?',
-        message: 'This training attempt will be permanently deleted.',
+        title: 'Delete training?',
+        message: 'This conversation will be permanently deleted.',
         confirmText: 'Delete',
         cancelText: 'Cancel',
       );
       if (confirmed != true) return false;
-      await _service.deleteAttempt(attempt.attemptId);
+      await _service.deleteConversation(conv.conversationId);
       setState(() {
-        _attempts.removeWhere((a) => a.attemptId == attempt.attemptId);
+        _conversations.removeWhere((c) => c.conversationId == conv.conversationId);
       });
       return false;
     } catch (e) {
@@ -159,20 +165,20 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
     if (_error != null) {
       return Center(child: Text('Failed to load history', style: AppTypography.bodyMedium));
     }
-    if (_attempts.isEmpty) {
+    if (_conversations.isEmpty) {
       return Center(child: Text('No training history yet', style: AppTypography.bodyMedium));
     }
 
     return ListView.separated(
       padding: const EdgeInsets.only(top: 20, bottom: 24),
-      itemCount: _attempts.length,
+      itemCount: _conversations.length,
       separatorBuilder: (_, __) => const SizedBox(height: 20),
       itemBuilder: (context, index) {
-        final attempt = _attempts[index];
+        final conv = _conversations[index];
         return Dismissible(
-          key: ValueKey(attempt.attemptId),
+          key: ValueKey(conv.conversationId),
           direction: DismissDirection.endToStart,
-          confirmDismiss: (_) => _confirmDelete(attempt),
+          confirmDismiss: (_) => _confirmDelete(conv),
           background: Container(
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 24),
@@ -182,10 +188,10 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
             ),
             child: const Icon(Icons.delete_outline, color: Colors.black, size: 28),
           ),
-          child: _AttemptCard(
-            attempt: attempt,
+          child: _ConversationCard(
+            conv: conv,
             coach: _coach,
-            onTap: () => _onAttemptTap(attempt),
+            onTap: () => _onTap(conv),
           ),
         );
       },
@@ -193,15 +199,15 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
   }
 }
 
-// ── _AttemptCard ───────────────────────────────────────────────────────────
+// ── _ConversationCard ──────────────────────────────────────────────────────
 
-class _AttemptCard extends StatelessWidget {
-  final TrainingAttemptPreview attempt;
+class _ConversationCard extends StatelessWidget {
+  final TrainingConversationPreview conv;
   final Character? coach;
   final VoidCallback onTap;
 
-  const _AttemptCard({
-    required this.attempt,
+  const _ConversationCard({
+    required this.conv,
     required this.coach,
     required this.onTap,
   });
@@ -236,21 +242,21 @@ class _AttemptCard extends StatelessWidget {
           ? CachedNetworkImage(
               imageUrl: coach!.thumbUrl,
               fit: BoxFit.cover,
-              errorWidget: (_, __, ___) => _buildAvatarFallback(),
+              errorWidget: (_, __, ___) => _buildFallback(),
             )
-          : _buildAvatarFallback(),
+          : _buildFallback(),
     );
   }
 
-  Widget _buildAvatarFallback() {
-    return Center(
-      child: Text(coach?.name[0] ?? 'H', style: AppTypography.titleMedium),
-    );
+  Widget _buildFallback() {
+    return Center(child: Text(coach?.name[0] ?? 'H', style: AppTypography.titleMedium));
   }
 
   Widget _buildInfo() {
-    final levelLabel = attempt.difficultyLevel >= 1 && attempt.difficultyLevel <= 3
-        ? _levelLabels[attempt.difficultyLevel - 1]
+    final levelLabel = (conv.difficultyLevel != null &&
+            conv.difficultyLevel! >= 1 &&
+            conv.difficultyLevel! <= 3)
+        ? _levelLabels[conv.difficultyLevel! - 1]
         : '—';
 
     return Column(
@@ -260,7 +266,7 @@ class _AttemptCard extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                attempt.trainingTitle,
+                conv.trainingTitle,
                 style: AppTypography.titleMedium.copyWith(fontSize: 16),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -268,32 +274,45 @@ class _AttemptCard extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              _formatDate(attempt.createdAt),
+              _formatDate(conv.createdAt),
               style: AppTypography.bodySmall.copyWith(fontSize: 12),
             ),
           ],
         ),
         const SizedBox(height: 4),
-        Text(
-          levelLabel,
-          style: AppTypography.bodySmall,
+        Row(
+          children: [
+            Text(levelLabel, style: AppTypography.bodySmall),
+            if (!conv.isEvaluated) ...[
+              const SizedBox(width: 8),
+              Text(
+                'In progress',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ],
         ),
       ],
     );
   }
 
   Widget _buildStatusDot() {
-    final isPassed = attempt.isPassed;
+    // Не оценён — серый, fail — пустой, pass — заполненный
+    final color = !conv.isEvaluated
+        ? AppColors.textSecondary
+        : AppColors.textPrimary;
+    final filled = conv.isPassed;
+
     return Container(
       width: 10,
       height: 10,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isPassed ? AppColors.textPrimary : Colors.transparent,
-        border: Border.all(
-          color: AppColors.textPrimary,
-          width: 1.5,
-        ),
+        color: filled ? color : Colors.transparent,
+        border: Border.all(color: color, width: 1.5),
       ),
     );
   }

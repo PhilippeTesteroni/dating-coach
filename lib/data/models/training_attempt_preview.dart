@@ -1,28 +1,29 @@
 import 'training_meta.dart';
 
-/// Превью одной попытки тренировки для экрана истории
-class TrainingAttemptPreview {
-  final String attemptId;
-  final String? conversationId;
+/// Превью одного тренировочного разговора для экрана истории
+class TrainingConversationPreview {
+  final String conversationId;
   final String submodeId;
-  final int difficultyLevel;
-  final String status; // "pass" | "fail"
+  final int? difficultyLevel;
   final DateTime createdAt;
+  // Результат evaluate — null если ещё не оценён
+  final String? attemptId;
+  final String? status; // "pass" | "fail" | null
   final TrainingFeedback? feedback;
 
-  const TrainingAttemptPreview({
-    required this.attemptId,
-    this.conversationId,
+  const TrainingConversationPreview({
+    required this.conversationId,
     required this.submodeId,
-    required this.difficultyLevel,
-    required this.status,
+    this.difficultyLevel,
     required this.createdAt,
+    this.attemptId,
+    this.status,
     this.feedback,
   });
 
+  bool get isEvaluated => status != null;
   bool get isPassed => status == 'pass';
 
-  /// Название тренировки из kTrainings по submodeId
   String get trainingTitle {
     try {
       return kTrainings.firstWhere((t) => t.submodeId == submodeId).title;
@@ -31,15 +32,15 @@ class TrainingAttemptPreview {
     }
   }
 
-  factory TrainingAttemptPreview.fromJson(Map<String, dynamic> json) {
+  factory TrainingConversationPreview.fromJson(Map<String, dynamic> json) {
     final feedbackJson = json['feedback'] as Map<String, dynamic>?;
-    return TrainingAttemptPreview(
-      attemptId: json['attempt_id'] as String,
-      conversationId: json['conversation_id'] as String?,
+    return TrainingConversationPreview(
+      conversationId: json['conversation_id'] as String,
       submodeId: json['submode_id'] as String,
-      difficultyLevel: json['difficulty_level'] as int,
-      status: json['status'] as String,
+      difficultyLevel: json['difficulty_level'] as int?,
       createdAt: DateTime.parse(json['created_at'] as String),
+      attemptId: json['attempt_id'] as String?,
+      status: json['status'] as String?,
       feedback: feedbackJson != null ? TrainingFeedback.fromJson(feedbackJson) : null,
     );
   }

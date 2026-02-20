@@ -144,11 +144,11 @@ abstract class ApiEndpoints {
 
   /// Получить историю тренировок
   /// GET /api/v1/practice/history
-  /// Response: { "attempts": [...] }
+  /// Response: { "conversations": [...] }
   static const String practiceHistory = '/api/v1/practice/history';
 
-  /// Удалить попытку тренировки
-  /// DELETE /api/v1/practice/history/{id}
+  /// Удалить тренировочный разговор из истории
+  /// DELETE /api/v1/practice/history/{conversation_id}
   /// Response: 204 No Content
-  static String practiceDeleteAttempt(String id) => '/api/v1/practice/history/$id';
+  static String practiceDeleteConversation(String id) => '/api/v1/practice/history/$id';
 }

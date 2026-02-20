@@ -52,13 +52,13 @@ class PracticeService {
     _progress = null;
   }
 
-  /// Получить историю тренировок
-  Future<List<TrainingAttemptPreview>> getHistory() async {
+  /// Получить историю тренировочных разговоров
+  Future<List<TrainingConversationPreview>> getHistory() async {
     return _repo.getHistory();
   }
 
-  /// Удалить попытку из истории
-  Future<void> deleteAttempt(String attemptId) async {
-    await _repo.deleteAttempt(attemptId);
+  /// Удалить тренировочный разговор из истории
+  Future<void> deleteConversation(String conversationId) async {
+    await _repo.deleteConversation(conversationId);
   }
 }
