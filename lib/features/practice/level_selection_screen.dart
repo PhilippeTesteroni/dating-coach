@@ -13,6 +13,7 @@ import '../../shared/widgets/dc_header.dart';
 import '../../shared/widgets/dc_menu.dart';
 import '../../shared/widgets/dc_menu_button.dart';
 import '../open_chat/chat_screen.dart';
+import 'result_screen.dart';
 
 const _levelLabels = ['Easy', 'Medium', 'Hard'];
 const _levelSubtitles = [
@@ -230,11 +231,23 @@ class _CharacterPickerScreenState extends State<_CharacterPickerScreen> {
         submodeId: widget.training.submodeId,
         difficultyLevel: widget.difficultyLevel,
         title: widget.training.title,
-        onFinish: () {
-          // pop chat → pop character picker → level selection will refresh via onLevelComplete
-          Navigator.of(context).pop(); // pop chat
-          Navigator.of(context).pop(); // pop character picker
-          widget.onLevelComplete?.call();
+        onFinish: (conversationId) {
+          // Пушим ResultScreen поверх чата
+          Navigator.of(context).push(DCPageRoute(
+            page: ResultScreen(
+              conversationId: conversationId,
+              submodeId: widget.training.submodeId,
+              difficultyLevel: widget.difficultyLevel,
+              trainingTitle: widget.training.title,
+              onDone: () {
+                // pop result + pop chat + pop character picker
+                Navigator.of(context).pop(); // result
+                Navigator.of(context).pop(); // chat
+                Navigator.of(context).pop(); // character picker
+                widget.onLevelComplete?.call();
+              },
+            ),
+          ));
         },
       ),
     ));

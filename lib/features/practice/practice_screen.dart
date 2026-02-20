@@ -75,7 +75,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
     ));
   }
 
-  Future<void> _onPreTrainingFinish() async {
+  Future<void> _onPreTrainingFinish(String? _) async {
     Navigator.of(context).pop();
     try {
       await _practiceService.initialize();

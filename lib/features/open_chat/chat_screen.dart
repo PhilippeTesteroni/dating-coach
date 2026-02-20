@@ -24,9 +24,9 @@ class ChatScreen extends StatefulWidget {
   final String? conversationId;
   final String title;
   final int? difficultyLevel;
-  /// Если задан — в хедере появляется кнопка "Done" / "Finish".
-  /// Вызывается когда пользователь её нажимает.
-  final VoidCallback? onFinish;
+  /// Если задан — в хедере появляется кнопка "Finish" / "Ready".
+  /// Вызывается с текущим conversationId (null если разговор ещё не создан).
+  final ValueChanged<String?>? onFinish;
 
   const ChatScreen({
     super.key,
@@ -313,16 +313,21 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildHeader() {
+    // Кнопка Finish: для тренировок — только после первого сообщения юзера,
+    // для pre_training (нет difficultyLevel) — сразу.
+    final showFinish = widget.onFinish != null &&
+        (widget.difficultyLevel == null || _userSentMessage);
+
     return DCHeader(
       title: widget.title,
       leading: const DCBackButton(),
-      trailing: widget.onFinish != null
+      trailing: showFinish
           ? GestureDetector(
-              onTap: widget.onFinish,
+              onTap: () => widget.onFinish!(_conversation?.id),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Text(
-                  'Ready',
+                  widget.difficultyLevel != null ? 'Finish' : 'Ready',
                   style: AppTypography.buttonAccent.copyWith(
                     color: AppColors.action,
                   ),
