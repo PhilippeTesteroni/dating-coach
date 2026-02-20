@@ -141,4 +141,14 @@ abstract class ApiEndpoints {
   /// Body: { "conversation_id": "uuid", "submode_id": "...", "difficulty_level": 1 }
   /// Response: { "status": "pass"|"fail", "feedback": {...}, "unlocked": [...] }
   static const String practiceEvaluate = '/api/v1/practice/evaluate';
+
+  /// Получить историю тренировок
+  /// GET /api/v1/practice/history
+  /// Response: { "attempts": [...] }
+  static const String practiceHistory = '/api/v1/practice/history';
+
+  /// Удалить попытку тренировки
+  /// DELETE /api/v1/practice/history/{id}
+  /// Response: 204 No Content
+  static String practiceDeleteAttempt(String id) => '/api/v1/practice/history/$id';
 }

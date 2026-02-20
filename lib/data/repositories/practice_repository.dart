@@ -1,5 +1,6 @@
 import '../api/api_client.dart';
 import '../models/training_progress.dart';
+import '../models/training_attempt_preview.dart';
 import '../../core/constants/api_endpoints.dart';
 
 /// Репозиторий для работы с прогрессом тренировок
@@ -33,5 +34,17 @@ class PracticeRepository {
         'difficulty_level': difficultyLevel,
       },
     );
+  }
+
+  /// Получить историю тренировок
+  Future<List<TrainingAttemptPreview>> getHistory() async {
+    final response = await _apiClient.get(ApiEndpoints.practiceHistory);
+    final list = response['attempts'] as List;
+    return list.map((j) => TrainingAttemptPreview.fromJson(j as Map<String, dynamic>)).toList();
+  }
+
+  /// Удалить попытку тренировки из истории
+  Future<void> deleteAttempt(String attemptId) async {
+    await _apiClient.delete(ApiEndpoints.practiceDeleteAttempt(attemptId));
   }
 }
