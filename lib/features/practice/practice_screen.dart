@@ -224,11 +224,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
           ),
         ),
 
-        DCHistoryButton(
-          text: 'training history',
-          onTap: () => Navigator.of(context).push(DCPageRoute(
-            page: const PracticeHistoryScreen(),
-          )),
+        Center(
+          child: DCHistoryButton(
+            onTap: () => Navigator.of(context).push(DCPageRoute(
+              page: const PracticeHistoryScreen(),
+            )),
+          ),
         ),
       ],
     );
