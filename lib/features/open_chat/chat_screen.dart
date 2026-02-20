@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
@@ -67,6 +68,12 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _initConversation() async {
+    // Preload avatar into cache before showing chat
+    final thumbUrl = widget.character.thumbUrl;
+    if (thumbUrl != null && thumbUrl.isNotEmpty) {
+      await CachedNetworkImageProvider(thumbUrl).resolve(const ImageConfiguration());
+    }
+
     try {
       if (widget.conversationId != null) {
         // Resume existing conversation — load messages
@@ -225,6 +232,15 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -247,10 +263,6 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildBody() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     if (_error != null) {
       return Center(
         child: Column(
