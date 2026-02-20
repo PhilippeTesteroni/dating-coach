@@ -11,7 +11,6 @@ import '../../shared/navigation/dc_page_route.dart';
 import '../../shared/widgets/dc_header.dart';
 import '../../shared/widgets/dc_menu.dart';
 import '../../shared/widgets/dc_menu_button.dart';
-import '../../shared/widgets/mode_list_item.dart';
 import '../open_chat/chat_screen.dart';
 import 'level_selection_screen.dart';
 
@@ -76,11 +75,13 @@ class _PracticeScreenState extends State<PracticeScreen> {
   }
 
   Future<void> _onPreTrainingFinish(String? _) async {
-    Navigator.of(context).pop();
+    // Сначала инициализируем и загружаем — потом закрываем чат.
+    // Так экран уже обновлён к моменту когда юзер видит его.
     try {
       await _practiceService.initialize();
       await _load();
     } catch (_) {}
+    if (mounted) Navigator.of(context).pop();
   }
 
   void _onTrainingTap(TrainingMeta training, TrainingState? state) {
@@ -140,41 +141,23 @@ class _PracticeScreenState extends State<PracticeScreen> {
       );
     }
 
-    final progress = _progress!;
-    if (!progress.onboardingComplete) {
-      return _buildPreTrainingState();
-    }
-    return _buildTrainingList(progress);
+    return _buildContent(_progress!);
   }
 
-  Widget _buildPreTrainingState() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 20),
-        Text('Where to begin?', style: AppTypography.titleLarge),
-        const SizedBox(height: 48),
-        ModeListItem(
-          title: 'How it works',
-          subtitle: 'A short conversation with Hitch before you start.',
-          onTap: _onPreTrainingTap,
-        ),
-        const SizedBox(height: 32),
-        Text(
-          'Complete this to unlock all trainings.',
-          style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTrainingList(TrainingProgress progress) {
+  Widget _buildContent(TrainingProgress progress) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
         Text('Your trainings', style: AppTypography.titleLarge),
-        const SizedBox(height: 48),
+        const SizedBox(height: 32),
+
+        // Баннер онбординга — показывается пока не пройден pre_training
+        if (!progress.onboardingComplete) ...[
+          _OnboardingBanner(onTap: _onPreTrainingTap),
+          const SizedBox(height: 36),
+        ],
+
         Expanded(
           child: ListView.separated(
             itemCount: kTrainings.length,
@@ -182,7 +165,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
             itemBuilder: (context, index) {
               final training = kTrainings[index];
               final state = progress.forSubmode(training.submodeId);
-              final isLocked = state == null || !state.hasAnyUnlocked;
+              // До онбординга все тренинги locked
+              final isLocked = !progress.onboardingComplete ||
+                  state == null ||
+                  !state.hasAnyUnlocked;
               return _TrainingListItem(
                 training: training,
                 state: state,
@@ -193,6 +179,68 @@ class _PracticeScreenState extends State<PracticeScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── _OnboardingBanner ──────────────────────────────────────────────────────
+
+class _OnboardingBanner extends StatefulWidget {
+  final VoidCallback onTap;
+
+  const _OnboardingBanner({required this.onTap});
+
+  @override
+  State<_OnboardingBanner> createState() => _OnboardingBannerState();
+}
+
+class _OnboardingBannerState extends State<_OnboardingBanner> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.inputBackground,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        transform: Matrix4.identity()..translate(_isPressed ? 2.0 : 0.0, 0.0),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Start here',
+                    style: AppTypography.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Have a short conversation with Hitch to unlock all trainings.',
+                    style: AppTypography.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Begin →',
+              style: AppTypography.buttonAccent.copyWith(
+                color: AppColors.action,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
