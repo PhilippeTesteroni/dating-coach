@@ -149,26 +149,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (!subscribed) return;
     }
 
-    // Create conversation on first user message if not yet created
-    if (_conversation == null) {
-      try {
-        final characterId = widget.character.isCoach ? null : widget.character.id;
-        final conversation = await _repository.createConversation(
-          submodeId: widget.submodeId,
-          characterId: characterId,
-          language: 'en',
-          seedMessage: _greetingContent,
-        );
-        setState(() => _conversation = conversation);
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to start conversation')),
-        );
-        return;
-      }
-    }
-
-    // 1. Show user message with "sent" status (empty circle)
+    // 1. Показываем пузырь и играем звук мгновенно
     final userMessage = Message(
       id: 'local_${DateTime.now().millisecondsSinceEpoch}',
       role: MessageRole.user,
@@ -184,6 +165,30 @@ class _ChatScreenState extends State<ChatScreen> {
     });
     SoundService().playSend();
     _scrollToBottom();
+
+    // 2. Создаём conversation если нужно (первое сообщение)
+    if (_conversation == null) {
+      try {
+        final characterId = widget.character.isCoach ? null : widget.character.id;
+        final conversation = await _repository.createConversation(
+          submodeId: widget.submodeId,
+          characterId: characterId,
+          language: 'en',
+          seedMessage: _greetingContent,
+        );
+        setState(() => _conversation = conversation);
+      } catch (e) {
+        setState(() {
+          _messages.removeLast();
+          _isSending = false;
+          _lastMessageReadStatus = MessageReadStatus.none;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to start conversation')),
+        );
+        return;
+      }
+    }
 
     // 3. Fire API request in background immediately
     final apiFuture = _repository.sendMessage(
