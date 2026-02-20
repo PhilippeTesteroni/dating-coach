@@ -2,7 +2,6 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 
 /// Сервис для воспроизведения UI-звуков чата.
-/// Создаёт новый AudioPlayer на каждый вызов — надёжнее на Android.
 class SoundService {
   SoundService._();
   static final SoundService _instance = SoundService._();
@@ -12,25 +11,24 @@ class SoundService {
 
   Future<void> init() async {
     debugPrint('🔊 SoundService init');
-    // Прогрев: создаём и сразу отпускаем плеер чтобы Android инициализировал аудиосистему
-    final warmup = AudioPlayer();
-    await warmup.setVolume(0);
-    await warmup.dispose();
+  }
+
+  Future<void> _play(String asset) async {
+    final player = AudioPlayer();
+    await player.setVolume(_volume);
+    await player.setReleaseMode(ReleaseMode.stop);
+    // Ждём завершения воспроизведения, потом освобождаем
+    player.onPlayerComplete.listen((_) => player.dispose());
+    await player.play(AssetSource(asset));
   }
 
   Future<void> playSend() async {
     debugPrint('🔊 playSend');
-    final player = AudioPlayer();
-    await player.setVolume(_volume);
-    await player.setReleaseMode(ReleaseMode.release);
-    await player.play(AssetSource('sounds/outcome_message.wav'));
+    await _play('sounds/outcome_message.wav');
   }
 
   Future<void> playReceive() async {
     debugPrint('🔊 playReceive');
-    final player = AudioPlayer();
-    await player.setVolume(_volume);
-    await player.setReleaseMode(ReleaseMode.release);
-    await player.play(AssetSource('sounds/income_message.wav'));
+    await _play('sounds/income_message.wav');
   }
 }
