@@ -1,8 +1,7 @@
 import 'package:soundpool/soundpool.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 
-/// Сервис для воспроизведения UI-звуков чата.
-/// Использует SoundPool — Android API специально для коротких UI-звуков.
 class SoundService {
   SoundService._();
   static final SoundService _instance = SoundService._();
@@ -20,8 +19,10 @@ class SoundService {
       _pool = Soundpool.fromOptions(
         options: const SoundpoolOptions(maxStreams: 2),
       );
-      _sendSoundId = await _pool!.loadUri('asset:///assets/sounds/outcome_message.wav');
-      _receiveSoundId = await _pool!.loadUri('asset:///assets/sounds/income_message.wav');
+      final sendData = await rootBundle.load('assets/sounds/outcome_message.wav');
+      final receiveData = await rootBundle.load('assets/sounds/income_message.wav');
+      _sendSoundId = await _pool!.load(sendData);
+      _receiveSoundId = await _pool!.load(receiveData);
       debugPrint('🔊 SoundService ready: send=$_sendSoundId receive=$_receiveSoundId');
     } catch (e) {
       debugPrint('🔊 SoundService init error: $e');
@@ -33,13 +34,19 @@ class SoundService {
     await _ensureInitialized();
     if (_pool == null || _sendSoundId < 0) return;
     debugPrint('🔊 playSend');
-    await _pool!.play(_sendSoundId);
+    final streamId = await _pool!.play(_sendSoundId);
+    if (streamId > 0) {
+      await _pool!.setVolume(streamId: streamId, volume: 0.35);
+    }
   }
 
   Future<void> playReceive() async {
     await _ensureInitialized();
     if (_pool == null || _receiveSoundId < 0) return;
     debugPrint('🔊 playReceive');
-    await _pool!.play(_receiveSoundId);
+    final streamId = await _pool!.play(_receiveSoundId);
+    if (streamId > 0) {
+      await _pool!.setVolume(streamId: streamId, volume: 0.35);
+    }
   }
 }
