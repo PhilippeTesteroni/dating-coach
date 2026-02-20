@@ -23,6 +23,9 @@ class ChatScreen extends StatefulWidget {
   final String submodeId;
   final String? conversationId;
   final String title;
+  /// Если задан — в хедере появляется кнопка "Done" / "Finish".
+  /// Вызывается когда пользователь её нажимает.
+  final VoidCallback? onFinish;
 
   const ChatScreen({
     super.key,
@@ -30,6 +33,7 @@ class ChatScreen extends StatefulWidget {
     this.submodeId = 'open_chat',
     this.conversationId,
     this.title = 'Open Chat',
+    this.onFinish,
   });
 
   @override
@@ -309,6 +313,20 @@ class _ChatScreenState extends State<ChatScreen> {
     return DCHeader(
       title: widget.title,
       leading: const DCBackButton(),
+      trailing: widget.onFinish != null
+          ? GestureDetector(
+              onTap: widget.onFinish,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text(
+                  'Ready',
+                  style: AppTypography.buttonAccent.copyWith(
+                    color: AppColors.action,
+                  ),
+                ),
+              ),
+            )
+          : null,
     );
   }
 

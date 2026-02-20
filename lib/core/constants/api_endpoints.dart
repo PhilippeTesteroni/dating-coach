@@ -123,4 +123,22 @@ abstract class ApiEndpoints {
   /// DELETE /api/v1/conversations
   /// Response: { "deleted_count": N }
   static const String conversationsDeleteAll = '/api/v1/conversations';
+
+  // ============ Practice ============
+
+  /// Получить прогресс тренировок
+  /// GET /api/v1/practice/progress
+  /// Response: { "onboarding_complete": bool, "trainings": [...] }
+  static const String practiceProgress = '/api/v1/practice/progress';
+
+  /// Инициализировать прогресс после пре-тренинга
+  /// POST /api/v1/practice/initialize
+  /// Response: 204 No Content
+  static const String practiceInitialize = '/api/v1/practice/initialize';
+
+  /// Оценить тренировочный разговор
+  /// POST /api/v1/practice/evaluate
+  /// Body: { "conversation_id": "uuid", "submode_id": "...", "difficulty_level": 1 }
+  /// Response: { "status": "pass"|"fail", "feedback": {...}, "unlocked": [...] }
+  static const String practiceEvaluate = '/api/v1/practice/evaluate';
 }
