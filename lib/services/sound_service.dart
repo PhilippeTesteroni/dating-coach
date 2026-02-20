@@ -8,35 +8,38 @@ class SoundService {
   static final SoundService _instance = SoundService._();
   factory SoundService() => _instance;
 
-  late final Soundpool _pool;
+  Soundpool? _pool;
   int _sendSoundId = -1;
   int _receiveSoundId = -1;
+  bool _initialized = false;
 
-  Future<void> init() async {
-    debugPrint('🔊 SoundService init');
-    _pool = Soundpool.fromOptions(
-      options: const SoundpoolOptions(maxStreams: 2),
-    );
-    _sendSoundId = await _pool.loadUri(
-      'asset:///assets/sounds/outcome_message.wav',
-    );
-    _receiveSoundId = await _pool.loadUri(
-      'asset:///assets/sounds/income_message.wav',
-    );
-    debugPrint('🔊 SoundService init done: send=$_sendSoundId receive=$_receiveSoundId');
+  Future<void> _ensureInitialized() async {
+    if (_initialized) return;
+    _initialized = true;
+    try {
+      _pool = Soundpool.fromOptions(
+        options: const SoundpoolOptions(maxStreams: 2),
+      );
+      _sendSoundId = await _pool!.loadUri('asset:///assets/sounds/outcome_message.wav');
+      _receiveSoundId = await _pool!.loadUri('asset:///assets/sounds/income_message.wav');
+      debugPrint('🔊 SoundService ready: send=$_sendSoundId receive=$_receiveSoundId');
+    } catch (e) {
+      debugPrint('🔊 SoundService init error: $e');
+      _pool = null;
+    }
   }
 
   Future<void> playSend() async {
-    debugPrint('🔊 playSend (id=$_sendSoundId)');
-    if (_sendSoundId < 0) return;
-    final streamId = await _pool.play(_sendSoundId);
-    if (streamId > 0) await _pool.setVolume(soundId: _sendSoundId, streamId: streamId, volumeLeft: 0.35, volumeRight: 0.35);
+    await _ensureInitialized();
+    if (_pool == null || _sendSoundId < 0) return;
+    debugPrint('🔊 playSend');
+    await _pool!.play(_sendSoundId);
   }
 
   Future<void> playReceive() async {
-    debugPrint('🔊 playReceive (id=$_receiveSoundId)');
-    if (_receiveSoundId < 0) return;
-    final streamId = await _pool.play(_receiveSoundId);
-    if (streamId > 0) await _pool.setVolume(soundId: _receiveSoundId, streamId: streamId, volumeLeft: 0.35, volumeRight: 0.35);
+    await _ensureInitialized();
+    if (_pool == null || _receiveSoundId < 0) return;
+    debugPrint('🔊 playReceive');
+    await _pool!.play(_receiveSoundId);
   }
 }
