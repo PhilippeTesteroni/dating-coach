@@ -43,6 +43,7 @@ class _ChatScreenState extends State<ChatScreen> {
   
   Conversation? _conversation;
   bool _isLoading = true;
+  bool _isVisible = false;
   bool _isSending = false;
   bool _showTyping = false;
   bool _userSentMessage = false;
@@ -91,6 +92,9 @@ class _ChatScreenState extends State<ChatScreen> {
           _messages.addAll(messages);
           _isLoading = false;
         });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _isVisible = true);
+        });
       } else {
         // New conversation: create immediately to get greeting
         final characterId = widget.character.isCoach ? null : widget.character.id;
@@ -106,6 +110,9 @@ class _ChatScreenState extends State<ChatScreen> {
           }
           _isLoading = false;
         });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _isVisible = true);
+        });
       }
     } catch (e, stackTrace) {
       debugPrint('❌ _initConversation error: $e');
@@ -113,6 +120,9 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _error = 'Failed to start conversation';
         _isLoading = false;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _isVisible = true);
       });
     }
   }
@@ -244,12 +254,17 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(child: _buildBody()),
-            _buildFooter(),
-          ],
+        child: AnimatedOpacity(
+          opacity: _isVisible ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeIn,
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(child: _buildBody()),
+              _buildFooter(),
+            ],
+          ),
         ),
       ),
     );
