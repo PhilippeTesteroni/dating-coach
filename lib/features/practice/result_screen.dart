@@ -12,6 +12,8 @@ import '../../shared/widgets/dc_header.dart';
 /// - observed feedback (что делал пользователь)
 /// - interpretation feedback (что это значит)
 /// - разблокированные уровни (если есть)
+///
+/// Back (кнопка андроида / жест) → onDone (не на чат, а на LevelSelection).
 class ResultScreen extends StatefulWidget {
   final String? conversationId;
   final String submodeId;
@@ -36,7 +38,7 @@ class _ResultScreenState extends State<ResultScreen> {
   bool _isLoading = true;
   String? _error;
 
-  String? _status;             // "pass" | "fail"
+  String? _status;
   List<String> _observed = [];
   List<String> _interpretation = [];
   List<Map<String, dynamic>> _unlocked = [];
@@ -48,7 +50,6 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   Future<void> _evaluate() async {
-    // Если conversationId нет — не было ни одного сообщения, сразу fail
     if (widget.conversationId == null) {
       setState(() {
         _status = 'fail';
@@ -85,23 +86,29 @@ class _ResultScreenState extends State<ResultScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            DCHeader(
-              title: widget.trainingTitle,
-              leading: const DCBackButton(),
-            ),
-            Expanded(
-              child: _isLoading
-                  ? _buildLoader()
-                  : _error != null
-                      ? _buildError()
-                      : _buildResult(),
-            ),
-          ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) widget.onDone();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: Column(
+            children: [
+              DCHeader(
+                title: widget.trainingTitle,
+                leading: DCBackButton(onTap: widget.onDone),
+              ),
+              Expanded(
+                child: _isLoading
+                    ? _buildLoader()
+                    : _error != null
+                        ? _buildError()
+                        : _buildResult(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -118,9 +125,13 @@ class _ResultScreenState extends State<ResultScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(_error!, style: AppTypography.bodyMedium),
+          Text(
+            _error!,
+            style: AppTypography.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 24),
           GestureDetector(
             onTap: () {
@@ -130,6 +141,7 @@ class _ResultScreenState extends State<ResultScreen> {
             child: Text(
               'Try again',
               style: AppTypography.buttonAccent.copyWith(color: AppColors.action),
+              textAlign: TextAlign.center,
             ),
           ),
         ],
@@ -147,7 +159,6 @@ class _ResultScreenState extends State<ResultScreen> {
         children: [
           const SizedBox(height: 20),
 
-          // ── Статус ──
           Text(
             isPassed ? 'Well done.' : 'Not quite.',
             style: AppTypography.titleLarge,
@@ -162,43 +173,27 @@ class _ResultScreenState extends State<ResultScreen> {
 
           const SizedBox(height: 48),
 
-          // ── Observed ──
           if (_observed.isNotEmpty) ...[
-            Text(
-              'What happened',
-              style: AppTypography.titleMedium,
-            ),
+            Text('What happened', style: AppTypography.titleMedium),
             const SizedBox(height: 16),
             ..._observed.map((item) => _FeedbackItem(text: item)),
             const SizedBox(height: 36),
           ],
 
-          // ── Interpretation ──
           if (_interpretation.isNotEmpty) ...[
-            Text(
-              'What it means',
-              style: AppTypography.titleMedium,
-            ),
+            Text('What it means', style: AppTypography.titleMedium),
             const SizedBox(height: 16),
             ..._interpretation.map((item) => _FeedbackItem(text: item)),
             const SizedBox(height: 36),
           ],
 
-          // ── Unlocked ──
           if (_unlocked.isNotEmpty) ...[
-            Text(
-              'Unlocked',
-              style: AppTypography.titleMedium,
-            ),
+            Text('Unlocked', style: AppTypography.titleMedium),
             const SizedBox(height: 8),
-            Text(
-              'New levels are now available.',
-              style: AppTypography.bodyMedium,
-            ),
+            Text('New levels are now available.', style: AppTypography.bodyMedium),
             const SizedBox(height: 36),
           ],
 
-          // ── Done кнопка ──
           GestureDetector(
             onTap: widget.onDone,
             child: Text(
