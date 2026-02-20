@@ -101,6 +101,7 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
         ModeListItem(
           title: 'Practice',
           subtitle: 'Situations that unfold step by step.',
+          disabled: true,
           onTap: () => _navigateWithOnboarding(context, const PracticeScreen()),
         ),
         const SizedBox(height: 36),

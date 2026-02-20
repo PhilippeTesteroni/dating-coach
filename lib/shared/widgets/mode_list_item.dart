@@ -10,12 +10,14 @@ class ModeListItem extends StatefulWidget {
   final String title;
   final String subtitle;
   final VoidCallback? onTap;
+  final bool disabled;
 
   const ModeListItem({
     super.key,
     required this.title,
     required this.subtitle,
     this.onTap,
+    this.disabled = false,
   });
 
   @override
@@ -27,39 +29,44 @@ class _ModeListItemState extends State<ModeListItem> {
 
   @override
   Widget build(BuildContext context) {
+    final isDisabled = widget.disabled || widget.onTap == null;
+
     return GestureDetector(
-      onTap: widget.onTap,
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) => setState(() => _isPressed = false),
-      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: isDisabled ? null : widget.onTap,
+      onTapDown: isDisabled ? null : (_) => setState(() => _isPressed = true),
+      onTapUp: isDisabled ? null : (_) => setState(() => _isPressed = false),
+      onTapCancel: isDisabled ? null : () => setState(() => _isPressed = false),
       behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        transform: Matrix4.identity()
-          ..translate(_isPressed ? 4.0 : 0.0, 0.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title
-            Text(
-              widget.title,
-              style: AppTypography.titleMedium.copyWith(
-                color: _isPressed 
-                    ? AppColors.primary 
-                    : AppColors.textPrimary,
+      child: Opacity(
+        opacity: isDisabled ? 0.35 : 1.0,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          transform: Matrix4.identity()
+            ..translate(_isPressed ? 4.0 : 0.0, 0.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Title
+              Text(
+                widget.title,
+                style: AppTypography.titleMedium.copyWith(
+                  color: _isPressed
+                      ? AppColors.primary
+                      : AppColors.textPrimary,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            // Subtitle
-            Text(
-              widget.subtitle,
-              style: AppTypography.bodyMedium.copyWith(
-                color: _isPressed
-                    ? AppColors.textSecondary.withOpacity(0.8)
-                    : AppColors.textSecondary,
+              const SizedBox(height: 4),
+              // Subtitle
+              Text(
+                widget.subtitle,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: _isPressed
+                      ? AppColors.textSecondary.withOpacity(0.8)
+                      : AppColors.textSecondary,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
