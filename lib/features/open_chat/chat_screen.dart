@@ -42,8 +42,9 @@ class _ChatScreenState extends State<ChatScreen> {
   
   Conversation? _conversation;
   bool _isLoading = true;
-  bool _isSending = false;    // блокирует input
-  bool _showTyping = false;   // показывает typing bubble
+  bool _isSending = false;
+  bool _showTyping = false;
+  bool _userSentMessage = false;
   MessageReadStatus _lastMessageReadStatus = MessageReadStatus.none;
   String? _error;
 
@@ -59,6 +60,9 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    if (_conversation != null && !_userSentMessage) {
+      _repository.deleteConversation(_conversation!.id).catchError((_) {});
+    }
     super.dispose();
   }
 
@@ -130,6 +134,7 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {
       _messages.add(userMessage);
       _isSending = true;
+      _userSentMessage = true;
       _lastMessageReadStatus = MessageReadStatus.sent;
     });
     _scrollToBottom();
