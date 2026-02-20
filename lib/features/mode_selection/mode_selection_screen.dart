@@ -10,6 +10,7 @@ import '../onboarding/onboarding_screen.dart';
 import '../open_chat/character_selection_screen.dart';
 import '../practice/practice_screen.dart';
 import '../understanding/understanding_screen.dart';
+import '../reflection/reflection_screen.dart';
 
 /// Экран выбора режима для Dating Coach
 /// 
@@ -114,9 +115,7 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
         ModeListItem(
           title: 'Guided Reflection',
           subtitle: 'Structured prompts for focused reflection.',
-          onTap: () {
-            // TODO: Navigate to Guided Reflection
-          },
+          onTap: () => _navigateWithOnboarding(context, const ReflectionScreen()),
         ),
       ],
     );
