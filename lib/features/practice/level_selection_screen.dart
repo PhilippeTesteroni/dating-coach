@@ -268,9 +268,11 @@ class _CharacterPickerScreenState extends State<_CharacterPickerScreen> {
               difficultyLevel: widget.difficultyLevel,
               trainingTitle: widget.training.title,
               onDone: () {
-                // pop result + pop character picker
+                // pop result + pop character picker + pop level selection
+                // → back to PracticeScreen (training list)
                 Navigator.of(context).pop(); // result
                 Navigator.of(context).pop(); // character picker
+                Navigator.of(context).pop(); // level selection
                 widget.onLevelComplete?.call();
               },
             ),

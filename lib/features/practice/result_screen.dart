@@ -188,31 +188,31 @@ class _ResultScreenState extends State<ResultScreen> {
             style: AppTypography.titleLarge,
           ),
           const SizedBox(height: 8),
-          Text(
-            isPassed
-                ? 'You passed this level.'
-                : 'You didn\'t pass this time.',
-            style: AppTypography.bodyMedium,
+          Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isPassed ? AppColors.textPrimary : Colors.transparent,
+                  border: Border.all(color: AppColors.textPrimary, width: 1.5),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                isPassed
+                    ? 'You passed this level.'
+                    : 'You didn\'t pass this time.',
+                style: AppTypography.bodyMedium,
+              ),
+            ],
           ),
 
           const SizedBox(height: 48),
 
           if (_observed.isNotEmpty) ...[
-            Row(
-              children: [
-                Text('What happened', style: AppTypography.titleMedium),
-                const SizedBox(width: 8),
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isPassed ? AppColors.textPrimary : Colors.transparent,
-                    border: Border.all(color: AppColors.textPrimary, width: 1.5),
-                  ),
-                ),
-              ],
-            ),
+            Text('What happened', style: AppTypography.titleMedium),
             const SizedBox(height: 16),
             ..._observed.map((item) => _FeedbackItem(text: item)),
             const SizedBox(height: 36),
