@@ -4,6 +4,7 @@ import 'training_meta.dart';
 class TrainingConversationPreview {
   final String conversationId;
   final String submodeId;
+  final String? characterId;
   final int? difficultyLevel;
   final DateTime createdAt;
   // Результат evaluate — null если ещё не оценён
@@ -14,6 +15,7 @@ class TrainingConversationPreview {
   const TrainingConversationPreview({
     required this.conversationId,
     required this.submodeId,
+    this.characterId,
     this.difficultyLevel,
     required this.createdAt,
     this.attemptId,
@@ -37,8 +39,9 @@ class TrainingConversationPreview {
     return TrainingConversationPreview(
       conversationId: json['conversation_id'] as String,
       submodeId: json['submode_id'] as String,
+      characterId: json['character_id'] as String?,
       difficultyLevel: json['difficulty_level'] as int?,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: DateTime.parse(json['created_at'] as String).toLocal(),
       attemptId: json['attempt_id'] as String?,
       status: json['status'] as String?,
       feedback: feedbackJson != null ? TrainingFeedback.fromJson(feedbackJson) : null,

@@ -111,13 +111,30 @@ class _PracticeScreenState extends State<PracticeScreen> {
   }
 
   Future<void> _onPreTrainingFinish(String? _) async {
-    // Сначала инициализируем и загружаем — потом закрываем чат.
-    // Так экран уже обновлён к моменту когда юзер видит его.
+    // Initialize progress on backend, then reload locally before closing chat.
     try {
       await _practiceService.initialize();
-      await _load();
-    } catch (_) {}
-    if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      debugPrint('⚠️ initialize() failed: $e');
+    }
+
+    // Always reload progress — even if initialize failed, the state may have changed.
+    try {
+      await _practiceService.loadProgress();
+    } catch (e) {
+      debugPrint('⚠️ loadProgress() failed: $e');
+    }
+
+    if (!mounted) return;
+
+    // Update UI with fresh progress, then close the chat.
+    setState(() {
+      _progress = _practiceService.progress;
+      _isLoading = false;
+      _error = null;
+    });
+
+    Navigator.of(context).pop();
   }
 
   void _onTrainingTap(TrainingMeta training, TrainingState? state) {

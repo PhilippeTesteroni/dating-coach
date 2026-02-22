@@ -61,4 +61,9 @@ class PracticeService {
   Future<void> deleteConversation(String conversationId) async {
     await _repo.deleteConversation(conversationId);
   }
+
+  /// Получить message_limit для уровня сложности
+  Future<int?> getMessageLimit(String submodeId, int difficultyLevel) async {
+    return _repo.getMessageLimit(submodeId, difficultyLevel);
+  }
 }

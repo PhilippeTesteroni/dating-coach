@@ -10,6 +10,7 @@ import '../../data/models/message.dart';
 import '../../data/models/conversation.dart';
 import '../../data/models/training_attempt_preview.dart';
 import '../../data/repositories/conversations_repository.dart';
+import '../../services/practice_service.dart';
 import '../../services/user_service.dart';
 import '../../services/sound_service.dart';
 import '../../shared/widgets/dc_back_button.dart';
@@ -64,6 +65,11 @@ class _ChatScreenState extends State<ChatScreen> {
   MessageReadStatus _lastMessageReadStatus = MessageReadStatus.none;
   String? _error;
 
+  /// Training message limit (null = unlimited, e.g. open_chat or coach modes)
+  int? _messageLimit;
+  /// Count of user messages sent in this conversation
+  int _userMessageCount = 0;
+
   final _random = Random();
 
   @override
@@ -76,8 +82,9 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
-    // Delete conversation only if it was created but user never replied
-    if (_conversation != null && !_userSentMessage) {
+    // Delete conversation only if it was newly created but user never replied.
+    // Don't delete if we resumed an existing conversation (conversationId was passed in).
+    if (_conversation != null && !_userSentMessage && widget.conversationId == null) {
       _repository.deleteConversation(_conversation!.id).catchError((_) {});
     }
     super.dispose();
@@ -88,6 +95,18 @@ class _ChatScreenState extends State<ChatScreen> {
     final thumbUrl = widget.character.thumbUrl;
     if (thumbUrl != null && thumbUrl.isNotEmpty) {
       await CachedNetworkImageProvider(thumbUrl).resolve(const ImageConfiguration());
+    }
+
+    // Load message limit for training modes
+    if (widget.difficultyLevel != null) {
+      try {
+        _messageLimit = await PracticeService().getMessageLimit(
+          widget.submodeId,
+          widget.difficultyLevel!,
+        );
+      } catch (_) {
+        // Fallback: no limit enforcement if config unavailable
+      }
     }
 
     try {
@@ -105,6 +124,7 @@ class _ChatScreenState extends State<ChatScreen> {
             createdAt: DateTime.now(),
           );
           _messages.addAll(messages);
+          _userMessageCount = messages.where((m) => m.isUser).length;
           _isLoading = false;
         });
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -253,6 +273,17 @@ class _ChatScreenState extends State<ChatScreen> {
       });
       SoundService().playReceive();
       _scrollToBottom();
+
+      // Track user message count and auto-finish if limit reached
+      _userMessageCount++;
+      if (_messageLimit != null && _userMessageCount >= _messageLimit!) {
+        // Small delay so user sees the response before auto-finishing
+        await Future.delayed(const Duration(milliseconds: 1500));
+        if (mounted && widget.onFinish != null) {
+          widget.onFinish!(_conversation?.id);
+          return;
+        }
+      }
 
       UserService().loadSubscriptionStatus();
     } catch (e) {
@@ -477,9 +508,11 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildFooter() {
+    final limitReached = _messageLimit != null && _userMessageCount >= _messageLimit!;
     return DCChatInput(
       onSend: _sendMessage,
-      enabled: !_isSending,
+      enabled: !_isSending && !limitReached,
+      hint: limitReached ? 'Message limit reached' : 'Type a message...',
     );
   }
 }

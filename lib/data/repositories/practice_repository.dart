@@ -47,4 +47,16 @@ class PracticeRepository {
   Future<void> deleteConversation(String conversationId) async {
     await _apiClient.delete(ApiEndpoints.practiceDeleteConversation(conversationId));
   }
+
+  /// Получить message_limit для уровня сложности из scenario config
+  Future<int?> getMessageLimit(String submodeId, int difficultyLevel) async {
+    final response = await _apiClient.get(ApiEndpoints.practiceScenario(submodeId));
+    final levels = response['difficulty_levels'] as List? ?? [];
+    for (final lv in levels) {
+      if (lv['level'] == difficultyLevel) {
+        return lv['message_limit'] as int?;
+      }
+    }
+    return null;
+  }
 }

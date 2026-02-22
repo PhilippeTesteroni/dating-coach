@@ -88,4 +88,15 @@ class CharactersService {
     _coach = coach;
     return _coach!;
   }
+
+  /// Получить всех персонажей (и character, и coach) без фильтрации.
+  /// Используется для подстановки аватаров в истории тренировок.
+  Future<List<Character>> getAllCharacters() async {
+    if (_apiClient == null) {
+      throw StateError('CharactersService not initialized. Call init() first.');
+    }
+
+    final repo = CharactersRepository(_apiClient!);
+    return repo.getCharacters(preferredGender: 'all');
+  }
 }

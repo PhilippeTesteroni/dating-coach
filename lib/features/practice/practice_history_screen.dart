@@ -28,6 +28,7 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
   final _service = PracticeService();
 
   List<TrainingConversationPreview> _conversations = [];
+  Map<String, Character> _characterIndex = {};
   Character? _coach;
   bool _isLoading = true;
   String? _error;
@@ -44,18 +45,35 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
       final results = await Future.wait([
         CharactersService().getCoach(),
         _service.getHistory(),
+        CharactersService().getAllCharacters(),
       ]);
 
       final coach = results[0] as Character;
       final conversations = results[1] as List<TrainingConversationPreview>;
+      final allCharacters = results[2] as List<Character>;
 
+      // Build index for quick lookup
+      final index = <String, Character>{};
+      for (final c in allCharacters) {
+        index[c.id] = c;
+      }
+
+      // Precache avatars for characters used in history
       if (mounted) {
-        await precacheImage(CachedNetworkImageProvider(coach.thumbUrl), context);
+        final urls = <String>{coach.thumbUrl};
+        for (final conv in conversations) {
+          final ch = conv.characterId != null ? index[conv.characterId] : null;
+          if (ch != null) urls.add(ch.thumbUrl);
+        }
+        await Future.wait(
+          urls.map((url) => precacheImage(CachedNetworkImageProvider(url), context)),
+        );
       }
 
       setState(() {
         _coach = coach;
         _conversations = conversations;
+        _characterIndex = index;
         _isLoading = false;
       });
     } catch (e) {
@@ -64,7 +82,11 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
   }
 
   void _onTap(TrainingConversationPreview conv) {
-    if (_coach == null) return;
+    // Determine which character to show
+    final character = conv.characterId != null
+        ? _characterIndex[conv.characterId]
+        : _coach;
+    if (character == null) return;
 
     // Если уже оценён — показываем результат сразу
     if (conv.isEvaluated) {
@@ -75,7 +97,7 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
     // Иначе — открываем чат (продолжить или посмотреть незаконченный)
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => ChatScreen(
-        character: _coach!,
+        character: character,
         submodeId: conv.submodeId,
         conversationId: conv.conversationId,
         difficultyLevel: conv.difficultyLevel,
@@ -182,7 +204,9 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
           ),
           child: _ConversationCard(
             conv: conv,
-            coach: _coach,
+            character: conv.characterId != null
+                ? _characterIndex[conv.characterId]
+                : _coach,
             onTap: () => _onTap(conv),
           ),
         );
@@ -195,12 +219,12 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
 
 class _ConversationCard extends StatelessWidget {
   final TrainingConversationPreview conv;
-  final Character? coach;
+  final Character? character;
   final VoidCallback onTap;
 
   const _ConversationCard({
     required this.conv,
-    required this.coach,
+    required this.character,
     required this.onTap,
   });
 
@@ -230,9 +254,9 @@ class _ConversationCard extends StatelessWidget {
         color: AppColors.inputBackground,
       ),
       clipBehavior: Clip.antiAlias,
-      child: coach != null
+      child: character != null
           ? CachedNetworkImage(
-              imageUrl: coach!.thumbUrl,
+              imageUrl: character!.thumbUrl,
               fit: BoxFit.cover,
               errorWidget: (_, __, ___) => _buildFallback(),
             )
@@ -241,7 +265,7 @@ class _ConversationCard extends StatelessWidget {
   }
 
   Widget _buildFallback() {
-    return Center(child: Text(coach?.name[0] ?? 'H', style: AppTypography.titleMedium));
+    return Center(child: Text(character?.name[0] ?? '?', style: AppTypography.titleMedium));
   }
 
   Widget _buildInfo() {

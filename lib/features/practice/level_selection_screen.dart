@@ -6,9 +6,11 @@ import '../../data/models/character.dart';
 import '../../data/models/training_meta.dart';
 import '../../data/models/training_progress.dart';
 import '../../services/characters_service.dart';
+import '../../services/practice_service.dart';
 import '../../services/user_service.dart';
 import '../../shared/navigation/dc_page_route.dart';
 import '../../shared/widgets/dc_back_button.dart';
+import '../../shared/widgets/dc_credits_paywall.dart';
 import '../../shared/widgets/dc_header.dart';
 import '../../shared/widgets/dc_menu.dart';
 import '../../shared/widgets/dc_menu_button.dart';
@@ -224,7 +226,32 @@ class _CharacterPickerScreenState extends State<_CharacterPickerScreen> {
     }
   }
 
-  void _onCharacterTap(Character character) {
+  Future<void> _onCharacterTap(Character character) async {
+    // Check if free-tier user has enough messages for this level
+    final userService = UserService();
+    if (!userService.isSubscribed) {
+      final remaining = userService.messagesRemaining ?? 0;
+      int? messageLimit;
+      try {
+        messageLimit = await PracticeService().getMessageLimit(
+          widget.training.submodeId,
+          widget.difficultyLevel,
+        );
+      } catch (_) {}
+
+      if (messageLimit != null && remaining < messageLimit) {
+        if (!mounted) return;
+        await DCCreditsPaywall.showForTraining(
+          context,
+          requiredMessages: messageLimit,
+        );
+        // Re-check after potential subscription
+        if (!userService.isSubscribed) return;
+      }
+    }
+
+    if (!mounted) return;
+
     Navigator.of(context).push(DCPageRoute(
       page: ChatScreen(
         character: character,
@@ -232,17 +259,17 @@ class _CharacterPickerScreenState extends State<_CharacterPickerScreen> {
         difficultyLevel: widget.difficultyLevel,
         title: widget.training.title,
         onFinish: (conversationId) {
-          // Пушим ResultScreen поверх чата
-          Navigator.of(context).push(DCPageRoute(
+          // Replace ChatScreen with ResultScreen so back gesture
+          // goes to CharacterPicker, not back to chat.
+          Navigator.of(context).pushReplacement(DCPageRoute(
             page: ResultScreen(
               conversationId: conversationId,
               submodeId: widget.training.submodeId,
               difficultyLevel: widget.difficultyLevel,
               trainingTitle: widget.training.title,
               onDone: () {
-                // pop result + pop chat + pop character picker
+                // pop result + pop character picker
                 Navigator.of(context).pop(); // result
-                Navigator.of(context).pop(); // chat
                 Navigator.of(context).pop(); // character picker
                 widget.onLevelComplete?.call();
               },

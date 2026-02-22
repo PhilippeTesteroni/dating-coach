@@ -151,4 +151,9 @@ abstract class ApiEndpoints {
   /// DELETE /api/v1/practice/history/{conversation_id}
   /// Response: 204 No Content
   static String practiceDeleteConversation(String id) => '/api/v1/practice/history/$id';
+
+  /// Получить конфиг сценария (message_limit по уровням)
+  /// GET /api/v1/practice/scenario/{submode_id}
+  /// Response: { "submode_id": "...", "difficulty_levels": [{"level": 1, "message_limit": 10}, ...] }
+  static String practiceScenario(String submodeId) => '/api/v1/practice/scenario/$submodeId';
 }

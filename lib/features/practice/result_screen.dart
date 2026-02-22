@@ -113,6 +113,16 @@ class _ResultScreenState extends State<ResultScreen> {
               DCHeader(
                 title: widget.trainingTitle,
                 leading: DCBackButton(onTap: widget.onDone),
+                trailing: GestureDetector(
+                  onTap: widget.onDone,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Text(
+                      'Done',
+                      style: AppTypography.buttonAccent.copyWith(color: AppColors.action),
+                    ),
+                  ),
+                ),
               ),
               Expanded(
                 child: _isLoading
@@ -188,7 +198,21 @@ class _ResultScreenState extends State<ResultScreen> {
           const SizedBox(height: 48),
 
           if (_observed.isNotEmpty) ...[
-            Text('What happened', style: AppTypography.titleMedium),
+            Row(
+              children: [
+                Text('What happened', style: AppTypography.titleMedium),
+                const SizedBox(width: 8),
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isPassed ? AppColors.textPrimary : Colors.transparent,
+                    border: Border.all(color: AppColors.textPrimary, width: 1.5),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 16),
             ..._observed.map((item) => _FeedbackItem(text: item)),
             const SizedBox(height: 36),
@@ -207,14 +231,6 @@ class _ResultScreenState extends State<ResultScreen> {
             Text('New levels are now available.', style: AppTypography.bodyMedium),
             const SizedBox(height: 36),
           ],
-
-          GestureDetector(
-            onTap: widget.onDone,
-            child: Text(
-              'Done',
-              style: AppTypography.buttonAccent.copyWith(color: AppColors.action),
-            ),
-          ),
 
           const SizedBox(height: 40),
         ],
