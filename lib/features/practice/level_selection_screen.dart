@@ -77,11 +77,14 @@ class LevelSelectionScreen extends StatelessWidget {
                       final levelState = state.level(level);
                       final isUnlocked = levelState?.isUnlocked ?? false;
                       final isPassed = levelState?.passed ?? false;
+                      final subtitle = isUnlocked
+                          ? _levelSubtitles[i]
+                          : (levelUnlockHint(level) ?? _levelSubtitles[i]);
                       return Padding(
                         padding: EdgeInsets.only(bottom: i < 2 ? 36 : 0),
                         child: _LevelItem(
                           label: _levelLabels[i],
-                          subtitle: _levelSubtitles[i],
+                          subtitle: subtitle,
                           isUnlocked: isUnlocked,
                           isPassed: isPassed,
                           onTap: isUnlocked

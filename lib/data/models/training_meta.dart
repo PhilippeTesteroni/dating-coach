@@ -48,3 +48,24 @@ const kTrainings = [
     subtitle: 'Follow-up and keeping momentum.',
   ),
 ];
+
+const _levelLabels = ['Easy', 'Medium', 'Hard'];
+
+/// Динамическая подсказка: что нужно сделать, чтобы разблокировать тренировку
+String? trainingUnlockHint(TrainingMeta training) {
+  final idx = kTrainings.indexWhere((t) => t.submodeId == training.submodeId);
+  if (idx == 0) return 'Complete the intro chat to unlock.';
+  if (idx > 0) {
+    final prev = kTrainings[idx - 1];
+    return 'Pass Medium in ${prev.title} to unlock.';
+  }
+  return null;
+}
+
+/// Динамическая подсказка: что нужно сделать, чтобы разблокировать уровень
+String? levelUnlockHint(int difficultyLevel) {
+  if (difficultyLevel == 1) return null; // easy — разблокирован вместе с тренировкой
+  if (difficultyLevel == 2) return 'Pass ${_levelLabels[0]} to unlock.';
+  if (difficultyLevel == 3) return 'Pass ${_levelLabels[1]} to unlock.';
+  return null;
+}

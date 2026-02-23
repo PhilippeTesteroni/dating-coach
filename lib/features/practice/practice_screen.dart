@@ -347,6 +347,10 @@ class _TrainingListItemState extends State<_TrainingListItem> {
         ? AppColors.textSecondary.withOpacity(0.25)
         : AppColors.textSecondary;
 
+    final subtitleText = widget.isLocked
+        ? (trainingUnlockHint(widget.training) ?? widget.training.subtitle)
+        : widget.training.subtitle;
+
     return GestureDetector(
       onTap: widget.onTap,
       onTapDown: widget.onTap != null ? (_) => setState(() => _isPressed = true) : null,
@@ -370,7 +374,7 @@ class _TrainingListItemState extends State<_TrainingListItem> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    widget.training.subtitle,
+                    subtitleText,
                     style: AppTypography.bodyMedium.copyWith(color: subtitleColor),
                   ),
                 ],
