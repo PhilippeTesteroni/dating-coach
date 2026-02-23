@@ -141,6 +141,17 @@ class _ChatScreenState extends State<ChatScreen> {
 
         setState(() {
           _greetingContent = greeting.isNotEmpty ? greeting : null;
+
+          // Inline hint for training mode: show message limit info
+          if (_messageLimit != null) {
+            _messages.add(Message(
+              id: 'hint_message_limit',
+              role: MessageRole.system,
+              content: 'You have $_messageLimit messages in this level. Harder levels give you more.',
+              createdAt: DateTime.now(),
+            ));
+          }
+
           if (_greetingContent != null) {
             _messages.add(Message(
               id: 'greeting_local',
@@ -340,6 +351,7 @@ class _ChatScreenState extends State<ChatScreen> {
           child: Column(
             children: [
               _buildHeader(),
+              if (_messageLimit != null) _buildProgressBar(),
               Expanded(child: _buildBody()),
               _buildFooter(),
             ],
@@ -416,6 +428,38 @@ class _ChatScreenState extends State<ChatScreen> {
     ));
   }
 
+  Widget _buildProgressBar() {
+    final remaining = (_messageLimit! - _userMessageCount).clamp(0, _messageLimit!);
+    final progress = _userMessageCount / _messageLimit!;
+    final isLow = remaining <= 3;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(1),
+              child: LinearProgressIndicator(
+                value: progress.clamp(0.0, 1.0),
+                minHeight: 2,
+                backgroundColor: AppColors.inputBackground,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.textPrimary),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            '$remaining left',
+            style: AppTypography.bodySmall.copyWith(
+              color: isLow ? AppColors.textPrimary : AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBody() {
     if (_error != null) {
       return Center(
@@ -482,8 +526,23 @@ class _ChatScreenState extends State<ChatScreen> {
         }
 
         final message = _messages[reversedIndex];
+
+        // System hint (centered gray text)
+        if (message.isSystem) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
+            child: Text(
+              message.content,
+              textAlign: TextAlign.center,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          );
+        }
+
         final isFirstAssistantMessage = !message.isUser &&
-            (reversedIndex == 0 || _messages.take(reversedIndex).every((m) => m.isUser));
+            (reversedIndex == 0 || _messages.take(reversedIndex).where((m) => !m.isSystem).every((m) => m.isUser));
 
         // Read status for user messages:
         // - Last user message while sending: animated sent → read

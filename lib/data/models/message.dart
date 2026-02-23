@@ -23,12 +23,14 @@ class Message {
 
   bool get isUser => role == MessageRole.user;
   bool get isAssistant => role == MessageRole.assistant;
+  bool get isSystem => role == MessageRole.system;
 }
 
 /// Роль отправителя сообщения
 enum MessageRole {
   user,
-  assistant;
+  assistant,
+  system;
 
   static MessageRole fromString(String value) {
     return MessageRole.values.firstWhere(
