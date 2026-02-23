@@ -489,7 +489,7 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             if (_messageLimit != null) ...[
               Text(
-                'You have $_messageLimit messages in this level.\nHarder levels give you more.',
+                'You have $_messageLimit messages to complete this level.',
                 textAlign: TextAlign.center,
                 style: AppTypography.bodySmall.copyWith(
                   color: AppColors.textSecondary,
