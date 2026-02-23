@@ -142,16 +142,6 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() {
           _greetingContent = greeting.isNotEmpty ? greeting : null;
 
-          // Inline hint for training mode: show message limit info
-          if (_messageLimit != null) {
-            _messages.add(Message(
-              id: 'hint_message_limit',
-              role: MessageRole.system,
-              content: 'You have $_messageLimit messages in this level. Harder levels give you more.',
-              createdAt: DateTime.now(),
-            ));
-          }
-
           if (_greetingContent != null) {
             _messages.add(Message(
               id: 'greeting_local',
@@ -494,12 +484,27 @@ class _ChatScreenState extends State<ChatScreen> {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 48),
-        child: Text(
-          'Just say anything to start the conversation.\nThere\'s no wrong way to begin!',
-          textAlign: TextAlign.center,
-          style: AppTypography.bodyMedium.copyWith(
-            color: AppColors.textSecondary,
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_messageLimit != null) ...[
+              Text(
+                'You have $_messageLimit messages in this level.\nHarder levels give you more.',
+                textAlign: TextAlign.center,
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+            Text(
+              'Say anything to start the conversation.\nThere\'s no wrong way to begin!',
+              textAlign: TextAlign.center,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
         ),
       ),
     );
