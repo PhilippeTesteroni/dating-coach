@@ -1,6 +1,7 @@
 import '../api/api_client.dart';
 import '../models/training_progress.dart';
 import '../models/training_attempt_preview.dart';
+import '../models/scenario_info.dart';
 import '../../core/constants/api_endpoints.dart';
 
 /// Репозиторий для работы с прогрессом тренировок
@@ -48,15 +49,9 @@ class PracticeRepository {
     await _apiClient.delete(ApiEndpoints.practiceDeleteConversation(conversationId));
   }
 
-  /// Получить message_limit для уровня сложности из scenario config
-  Future<int?> getMessageLimit(String submodeId, int difficultyLevel) async {
+  /// Получить информацию о scenario: description + message_limit per level
+  Future<ScenarioInfo> getScenarioInfo(String submodeId) async {
     final response = await _apiClient.get(ApiEndpoints.practiceScenario(submodeId));
-    final levels = response['difficulty_levels'] as List? ?? [];
-    for (final lv in levels) {
-      if (lv['level'] == difficultyLevel) {
-        return lv['message_limit'] as int?;
-      }
-    }
-    return null;
+    return ScenarioInfo.fromJson(response);
   }
 }

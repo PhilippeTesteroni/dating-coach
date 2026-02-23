@@ -1,5 +1,6 @@
 import '../data/models/training_attempt_preview.dart';
 import '../data/models/training_progress.dart';
+import '../data/models/scenario_info.dart';
 import '../data/repositories/practice_repository.dart';
 import 'user_service.dart';
 
@@ -62,8 +63,14 @@ class PracticeService {
     await _repo.deleteConversation(conversationId);
   }
 
+  /// Получить информацию о scenario (description + message limits)
+  Future<ScenarioInfo> getScenarioInfo(String submodeId) async {
+    return _repo.getScenarioInfo(submodeId);
+  }
+
   /// Получить message_limit для уровня сложности
   Future<int?> getMessageLimit(String submodeId, int difficultyLevel) async {
-    return _repo.getMessageLimit(submodeId, difficultyLevel);
+    final info = await getScenarioInfo(submodeId);
+    return info.messageLimit(difficultyLevel);
   }
 }

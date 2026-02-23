@@ -26,7 +26,7 @@ const _levelSubtitles = [
 
 /// Экран выбора уровня сложности тренировки.
 /// При выборе уровня открывает выбор персонажа.
-class LevelSelectionScreen extends StatelessWidget {
+class LevelSelectionScreen extends StatefulWidget {
   final TrainingMeta training;
   final TrainingState state;
   final VoidCallback? onLevelComplete;
@@ -38,12 +38,34 @@ class LevelSelectionScreen extends StatelessWidget {
     this.onLevelComplete,
   });
 
+  @override
+  State<LevelSelectionScreen> createState() => _LevelSelectionScreenState();
+}
+
+class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
+  String? _description;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDescription();
+  }
+
+  Future<void> _loadDescription() async {
+    try {
+      final info = await PracticeService().getScenarioInfo(widget.training.submodeId);
+      if (mounted && info.description != null) {
+        setState(() => _description = info.description);
+      }
+    } catch (_) {}
+  }
+
   void _onLevelTap(BuildContext context, int difficultyLevel) {
     Navigator.of(context).push(DCPageRoute(
       page: _CharacterPickerScreen(
-        training: training,
+        training: widget.training,
         difficultyLevel: difficultyLevel,
-        onLevelComplete: onLevelComplete,
+        onLevelComplete: widget.onLevelComplete,
       ),
     ));
   }
@@ -70,11 +92,20 @@ class LevelSelectionScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 20),
-                    Text(training.title, style: AppTypography.titleLarge),
+                    Text(widget.training.title, style: AppTypography.titleLarge),
+                    if (_description != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _description!,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 48),
                     ...List.generate(3, (i) {
                       final level = i + 1;
-                      final levelState = state.level(level);
+                      final levelState = widget.state.level(level);
                       final isUnlocked = levelState?.isUnlocked ?? false;
                       final isPassed = levelState?.passed ?? false;
                       final subtitle = isUnlocked
