@@ -149,6 +149,7 @@ class _ChatScreenState extends State<ChatScreen> {
               content: _greetingContent!,
               createdAt: DateTime.now(),
             ));
+            SoundService().playReceive();
           }
           _isLoading = false;
         });
