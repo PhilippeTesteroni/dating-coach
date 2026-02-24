@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../app.dart';
+import '../../core/utils/device_info_service.dart';
 import '../../data/api/api_client.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../services/app_settings_service.dart';
@@ -59,6 +61,7 @@ class _SplashScreenState extends State<SplashScreen> {
       final authService = AuthService(
         authRepository: authRepository,
         apiClient: apiClient,
+        deviceInfoService: DeviceInfoService(const FlutterSecureStorage()),
       );
 
       // 1. Инициализируем сессию (register/login)

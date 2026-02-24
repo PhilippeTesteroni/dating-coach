@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/models/character.dart';
+import '../../data/models/scenario_info.dart';
 import '../../data/models/training_meta.dart';
 import '../../data/models/training_progress.dart';
 import '../../services/characters_service.dart';
@@ -18,7 +19,7 @@ import '../open_chat/chat_screen.dart';
 import 'result_screen.dart';
 
 const _levelLabels = ['Easy', 'Medium', 'Hard'];
-const _levelSubtitles = [
+const _levelSubtitlesFallback = [
   'A comfortable start.',
   'More realistic responses.',
   'High resistance, real pressure.',
@@ -44,6 +45,7 @@ class LevelSelectionScreen extends StatefulWidget {
 
 class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
   String? _description;
+  ScenarioInfo? _scenarioInfo;
 
   @override
   void initState() {
@@ -54,8 +56,11 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
   Future<void> _loadDescription() async {
     try {
       final info = await PracticeService().getScenarioInfo(widget.training.submodeId);
-      if (mounted && info.description != null) {
-        setState(() => _description = info.description);
+      if (mounted) {
+        setState(() {
+          _scenarioInfo = info;
+          _description = info.description;
+        });
       }
     } catch (_) {}
   }
@@ -109,8 +114,8 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
                       final isUnlocked = levelState?.isUnlocked ?? false;
                       final isPassed = levelState?.passed ?? false;
                       final subtitle = isUnlocked
-                          ? _levelSubtitles[i]
-                          : (levelUnlockHint(level) ?? _levelSubtitles[i]);
+                          ? (_scenarioInfo?.levelDescription(level) ?? _levelSubtitlesFallback[i])
+                          : (levelUnlockHint(level) ?? _levelSubtitlesFallback[i]);
                       return Padding(
                         padding: EdgeInsets.only(bottom: i < 2 ? 36 : 0),
                         child: _LevelItem(

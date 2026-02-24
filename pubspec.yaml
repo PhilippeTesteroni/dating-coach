@@ -42,6 +42,11 @@ dependencies:
 
   # Local storage
   shared_preferences: ^2.2.2
+  flutter_secure_storage: ^9.0.0
+
+  # Device Info
+  device_info_plus: ^10.1.0
+  android_id: ^0.4.0
 
   # UUID generation
   uuid: ^4.2.1

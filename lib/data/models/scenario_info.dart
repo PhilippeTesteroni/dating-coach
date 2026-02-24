@@ -26,18 +26,31 @@ class ScenarioInfo {
     }
     return null;
   }
+
+  String? levelDescription(int difficultyLevel) {
+    for (final lv in difficultyLevels) {
+      if (lv.level == difficultyLevel) return lv.levelDescription;
+    }
+    return null;
+  }
 }
 
 class ScenarioLevelInfo {
   final int level;
   final int messageLimit;
+  final String? levelDescription;
 
-  const ScenarioLevelInfo({required this.level, required this.messageLimit});
+  const ScenarioLevelInfo({
+    required this.level,
+    required this.messageLimit,
+    this.levelDescription,
+  });
 
   factory ScenarioLevelInfo.fromJson(Map<String, dynamic> json) {
     return ScenarioLevelInfo(
       level: json['level'] as int,
       messageLimit: (json['message_limit'] as int?) ?? 10,
+      levelDescription: json['level_description'] as String?,
     );
   }
 }

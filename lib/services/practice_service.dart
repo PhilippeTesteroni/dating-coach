@@ -21,8 +21,6 @@ class PracticeService {
 
   TrainingProgress? get progress => _progress;
 
-  bool get onboardingComplete => _progress?.onboardingComplete ?? false;
-
   /// Загрузить прогресс с сервера (кэширует результат).
   /// Параллельно подгружает scenario info для всех trainings.
   Future<TrainingProgress> loadProgress() async {
@@ -38,12 +36,6 @@ class PracticeService {
         getScenarioInfo(t.submodeId).catchError((_) => null);
       }
     }
-  }
-
-  /// Инициализировать прогресс после пре-тренинга
-  Future<void> initialize() async {
-    await _repo.initialize();
-    _progress = null; // сбросить кэш — следующий loadProgress подтянет свежие данные
   }
 
   /// Оценить разговор. Возвращает сырой ответ сервера.

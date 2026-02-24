@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
-import '../../data/models/character.dart';
 import '../../data/models/training_meta.dart';
 import '../../data/models/training_progress.dart';
-import '../../services/characters_service.dart';
 import '../../services/practice_service.dart';
 import '../../services/user_service.dart';
 import '../../shared/navigation/dc_page_route.dart';
@@ -14,7 +12,6 @@ import '../../shared/widgets/dc_history_button.dart';
 import '../../shared/widgets/dc_menu.dart';
 import '../../shared/widgets/dc_menu_button.dart';
 import '../../shared/widgets/dc_modal.dart';
-import '../open_chat/chat_screen.dart';
 import 'level_selection_screen.dart';
 import 'practice_history_screen.dart';
 
@@ -29,7 +26,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
   final _practiceService = PracticeService();
 
   TrainingProgress? _progress;
-  Character? _coach;
   bool _isLoading = true;
   String? _error;
 
@@ -45,14 +41,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
       _error = null;
     });
     try {
-      final results = await Future.wait([
-        _practiceService.loadProgress(),
-        CharactersService().getCoach(),
-      ]);
+      final progress = await _practiceService.loadProgress();
       if (mounted) {
         setState(() {
-          _progress = results[0] as TrainingProgress;
-          _coach = results[1] as Character;
+          _progress = progress;
           _isLoading = false;
         });
       }
@@ -95,46 +87,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
         ],
       ),
     );
-  }
-
-  void _onPreTrainingTap() {
-    if (_coach == null) return;
-    Navigator.of(context).push(DCPageRoute(
-      page: ChatScreen(
-        character: _coach!,
-        submodeId: 'pre_training',
-        conversationId: _progress?.preTrainingConversationId,
-        title: 'Practice',
-        onFinish: _onPreTrainingFinish,
-      ),
-    ));
-  }
-
-  Future<void> _onPreTrainingFinish(String? _) async {
-    // Initialize progress on backend, then reload locally before closing chat.
-    try {
-      await _practiceService.initialize();
-    } catch (e) {
-      debugPrint('⚠️ initialize() failed: $e');
-    }
-
-    // Always reload progress — even if initialize failed, the state may have changed.
-    try {
-      await _practiceService.loadProgress();
-    } catch (e) {
-      debugPrint('⚠️ loadProgress() failed: $e');
-    }
-
-    if (!mounted) return;
-
-    // Update UI with fresh progress, then close the chat.
-    setState(() {
-      _progress = _practiceService.progress;
-      _isLoading = false;
-      _error = null;
-    });
-
-    Navigator.of(context).pop();
   }
 
   void _onTrainingTap(TrainingMeta training, TrainingState? state) {
@@ -215,12 +167,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
         ),
         const SizedBox(height: 32),
 
-        // Баннер онбординга — показывается пока не пройден pre_training
-        if (!progress.onboardingComplete) ...[
-          _OnboardingBanner(onTap: _onPreTrainingTap),
-          const SizedBox(height: 36),
-        ],
-
         Expanded(
           child: ListView.separated(
             itemCount: kTrainings.length,
@@ -228,10 +174,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
             itemBuilder: (context, index) {
               final training = kTrainings[index];
               final state = progress.forSubmode(training.submodeId);
-              // До онбординга все тренинги locked
-              final isLocked = !progress.onboardingComplete ||
-                  state == null ||
-                  !state.hasAnyUnlocked;
+              final isLocked = state == null || !state.hasAnyUnlocked;
               return _TrainingListItem(
                 training: training,
                 state: state,
@@ -250,68 +193,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
           ),
         ),
       ],
-    );
-  }
-}
-
-// ── _OnboardingBanner ──────────────────────────────────────────────────────
-
-class _OnboardingBanner extends StatefulWidget {
-  final VoidCallback onTap;
-
-  const _OnboardingBanner({required this.onTap});
-
-  @override
-  State<_OnboardingBanner> createState() => _OnboardingBannerState();
-}
-
-class _OnboardingBannerState extends State<_OnboardingBanner> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) => setState(() => _isPressed = false),
-      onTapCancel: () => setState(() => _isPressed = false),
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.inputBackground,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        transform: Matrix4.identity()..translate(_isPressed ? 2.0 : 0.0, 0.0),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Start here',
-                    style: AppTypography.titleMedium,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Have a short conversation with Hitch, your coach, to unlock all trainings.',
-                    style: AppTypography.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Begin →',
-              style: AppTypography.buttonAccent.copyWith(
-                color: AppColors.action,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

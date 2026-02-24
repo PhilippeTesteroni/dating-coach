@@ -90,6 +90,7 @@ class _DCChatInputState extends State<DCChatInput> {
                 onSubmitted: (_) => _send(),
                 maxLines: null,
                 keyboardType: TextInputType.multiline,
+                textCapitalization: TextCapitalization.sentences,
               ),
             ),
           ),

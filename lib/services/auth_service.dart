@@ -1,29 +1,33 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../core/utils/device_id.dart';
+import '../core/utils/device_info_service.dart';
 import '../data/api/api_client.dart';
 import '../data/models/user_session.dart';
 import '../data/repositories/auth_repository.dart';
 
 /// Сервис авторизации
-/// 
+///
 /// Управляет сессией пользователя:
 /// - Первый запуск → register
 /// - Повторные запуски → login
+/// - Очистка данных приложения → тот же device_id из secure storage → тот же пользователь
 class AuthService {
   static const String _sessionKey = 'user_session';
-  
+
   final AuthRepository _authRepository;
   final ApiClient _apiClient;
-  
+  final DeviceInfoService _deviceInfoService;
+
   UserSession? _currentSession;
 
   AuthService({
     required AuthRepository authRepository,
     required ApiClient apiClient,
+    required DeviceInfoService deviceInfoService,
   })  : _authRepository = authRepository,
-        _apiClient = apiClient;
+        _apiClient = apiClient,
+        _deviceInfoService = deviceInfoService;
 
   /// Текущая сессия
   UserSession? get currentSession => _currentSession;
@@ -32,17 +36,15 @@ class AuthService {
   bool get isAuthenticated => _currentSession != null && !_currentSession!.isExpired;
 
   /// Инициализация сессии
-  /// 
-  /// Вызывается при запуске приложения
-  /// - Если есть сохранённая сессия → login
-  /// - Если нет → register
+  ///
+  /// Вызывается при запуске приложения.
+  /// - Если есть сохранённая сессия → login с тем же device_id
+  /// - Если нет → register (device_id берётся из hardware, не генерируется заново)
   Future<UserSession> initSession() async {
-    // Пробуем загрузить сохранённую сессию
     final savedSession = await _loadSession();
     debugPrint('🔐 Saved session: ${savedSession?.userId}, expired: ${savedSession?.isExpired}');
-    
+
     if (savedSession != null && !savedSession.isExpired) {
-      // Есть валидная сессия — делаем login для обновления токена
       try {
         debugPrint('🔐 Trying login with deviceId: ${savedSession.deviceId}');
         final session = await _authRepository.login(
@@ -54,48 +56,44 @@ class AuthService {
         _apiClient.setAuthToken(session.token);
         return session;
       } catch (e) {
-        // Если login не удался — пробуем register
         debugPrint('🔐 Login failed: $e, falling back to register');
-        return _registerNewUser();
+        return _registerUser();
       }
     }
-    
-    // Нет сессии или истекла — регистрируем нового пользователя
-    debugPrint('🔐 No valid session, registering new user');
-    return _registerNewUser();
+
+    debugPrint('🔐 No valid session, registering user');
+    return _registerUser();
   }
 
-  /// Регистрация нового пользователя
-  Future<UserSession> _registerNewUser() async {
-    final deviceId = await DeviceId.get();
+  /// Регистрация / восстановление пользователя по device_id
+  ///
+  /// Identity Service вернёт существующего пользователя если device_id уже известен.
+  Future<UserSession> _registerUser() async {
+    final deviceId = await _deviceInfoService.getDeviceId();
     debugPrint('🔐 Registering with deviceId: $deviceId');
-    
-    final session = await _authRepository.register(
-      deviceId: deviceId,
-    );
-    debugPrint('🔐 Registered new user: ${session.userId}');
-    
+
+    final session = await _authRepository.register(deviceId: deviceId);
+    debugPrint('🔐 User: ${session.userId}');
+
     await _saveSession(session);
     _currentSession = session;
     _apiClient.setAuthToken(session.token);
-    
+
     return session;
   }
 
   /// Сохранить сессию в SharedPreferences
   Future<void> _saveSession(UserSession session) async {
     final prefs = await SharedPreferences.getInstance();
-    final json = jsonEncode(session.toJson());
-    await prefs.setString(_sessionKey, json);
+    await prefs.setString(_sessionKey, jsonEncode(session.toJson()));
   }
 
   /// Загрузить сессию из SharedPreferences
   Future<UserSession?> _loadSession() async {
     final prefs = await SharedPreferences.getInstance();
     final json = prefs.getString(_sessionKey);
-    
     if (json == null) return null;
-    
+
     try {
       final data = jsonDecode(json) as Map<String, dynamic>;
       return UserSession(
@@ -107,7 +105,7 @@ class AuthService {
             : null,
       );
     } catch (e) {
-      // Corrupted data — clear and return null
+      final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_sessionKey);
       return null;
     }
