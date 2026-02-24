@@ -215,15 +215,15 @@ class _ChatScreenState extends State<ChatScreen> {
       });
     }
 
-    // 3. Sent → Read: random 800–2500ms (параллельно с createConversation)
-    await Future.delayed(_randomDelay(800, 2500));
+    // 3. Sent → Read: random 640–2000ms (параллельно с createConversation)
+    await Future.delayed(_randomDelay(640, 2000));
     if (!mounted) return;
     setState(() {
       _lastMessageReadStatus = MessageReadStatus.read;
     });
 
-    // 4. Read → Start typing: random 500–2000ms
-    await Future.delayed(_randomDelay(500, 2000));
+    // 4. Read → Start typing: random 400–1600ms
+    await Future.delayed(_randomDelay(400, 1600));
     if (!mounted) return;
 
     // 5. Ждём conversation если ещё не готов (обычно уже есть)
