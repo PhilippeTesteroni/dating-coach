@@ -83,25 +83,22 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Open Chat is an unstructured conversation space.',
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: AppTypography.semibold,
-            ),
+            'Open Chat is a free-form space with no structure, no levels, and no feedback.',
+            style: AppTypography.bodyMedium.copyWith(color: AppColors.textPrimary),
           ),
           const SizedBox(height: 16),
           Text(
-            'You choose who you want to talk to based on how their way of responding feels to you.',
+            'You choose a character and just talk. Each character has a distinct personality and responds based on how the conversation actually goes — they can lose interest, warm up, push back, or engage, depending on what you bring.',
             style: AppTypography.bodyMedium,
           ),
           const SizedBox(height: 16),
           Text(
-            'There is no right or wrong choice.',
+            'There\'s no goal and no wrong move. Good for warming up, experimenting, or just having a conversation that feels real.',
             style: AppTypography.bodyMedium,
           ),
           const SizedBox(height: 16),
           Text(
-            'You can always return to any conversation or delete it in the chat history.',
+            'You can return to any previous conversation or start a new one at any time.',
             style: AppTypography.bodyMedium,
           ),
         ],

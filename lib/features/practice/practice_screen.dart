@@ -66,22 +66,22 @@ class _PracticeScreenState extends State<PracticeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Practice is a structured space for working through situations over time.',
+            'Practice is a structured space to train specific communication skills through simulated conversations with fictional characters.',
             style: AppTypography.bodyMedium.copyWith(color: AppColors.textPrimary),
           ),
           const SizedBox(height: 16),
           Text(
-            'Each step unfolds gradually, allowing you to notice patterns and reactions as they appear.',
+            'There are 7 modules, each focused on a different challenge — from starting a conversation to what happens after a meeting. Each module has three levels: easy, medium, and hard.',
             style: AppTypography.bodyMedium,
           ),
           const SizedBox(height: 16),
           Text(
-            'There is no right pace and no goal to complete everything.',
+            'Levels unlock progressively. Easy and medium of the first module are open from the start. Completing medium unlocks hard for that module and opens the next one. Hard levels are optional — skipping them doesn\'t block progress.',
             style: AppTypography.bodyMedium,
           ),
           const SizedBox(height: 16),
           Text(
-            'You can move forward when it feels relevant, or pause at any point.',
+            'After each session you get structured feedback based on what actually happened in the conversation. You don\'t self-report anything.',
             style: AppTypography.bodyMedium,
           ),
         ],

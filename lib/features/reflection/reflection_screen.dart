@@ -79,15 +79,37 @@ class _ReflectionScreenState extends State<ReflectionScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Reflection is a quiet space to pause and look at a moment in time.',
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textPrimary,
-            ),
+            'Reflection is a space to process an experience — not to analyze it, but to sit with it and understand what it brought up.',
+            style: AppTypography.bodyMedium.copyWith(color: AppColors.textPrimary),
           ),
           const SizedBox(height: 16),
           Text(
-            'You choose a point — before or after an event — and explore '
-            'what you noticed, felt, or understood.',
+            'Four starting points:',
+            style: AppTypography.bodyMedium,
+          ),
+          const SizedBox(height: 8),
+          Text.rich(TextSpan(children: [
+            TextSpan(text: 'After Rejection', style: AppTypography.bodyMedium.copyWith(fontWeight: AppTypography.semibold)),
+            TextSpan(text: ' — looking at what happened and what it stirred.', style: AppTypography.bodyMedium),
+          ])),
+          const SizedBox(height: 6),
+          Text.rich(TextSpan(children: [
+            TextSpan(text: 'After a Difficult Conversation', style: AppTypography.bodyMedium.copyWith(fontWeight: AppTypography.semibold)),
+            TextSpan(text: ' — noticing the dynamics without judging yourself or the other person.', style: AppTypography.bodyMedium),
+          ])),
+          const SizedBox(height: 6),
+          Text.rich(TextSpan(children: [
+            TextSpan(text: 'After a Meeting', style: AppTypography.bodyMedium.copyWith(fontWeight: AppTypography.semibold)),
+            TextSpan(text: ' — taking stock of impressions, signals, and your own reactions.', style: AppTypography.bodyMedium),
+          ])),
+          const SizedBox(height: 6),
+          Text.rich(TextSpan(children: [
+            TextSpan(text: 'Before an Important Step', style: AppTypography.bodyMedium.copyWith(fontWeight: AppTypography.semibold)),
+            TextSpan(text: ' — slowing down to clarify what you\'re about to do and why.', style: AppTypography.bodyMedium),
+          ])),
+          const SizedBox(height: 16),
+          Text(
+            'Hitch leads the conversation. He listens and asks questions — no advice, no evaluation.',
             style: AppTypography.bodyMedium,
           ),
         ],

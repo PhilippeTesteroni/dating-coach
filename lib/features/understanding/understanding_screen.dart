@@ -83,15 +83,37 @@ class _UnderstandingScreenState extends State<UnderstandingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'This section helps you look at a situation from a specific angle.',
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textPrimary,
-            ),
+            'Understanding is a space to look more closely at something specific — a conversation, a situation, or a pattern of behavior.',
+            style: AppTypography.bodyMedium.copyWith(color: AppColors.textPrimary),
           ),
           const SizedBox(height: 16),
           Text(
-            'You choose what to focus on — the conversation, the context, '
-            'the other person, or yourself.',
+            'Four angles:',
+            style: AppTypography.bodyMedium,
+          ),
+          const SizedBox(height: 8),
+          Text.rich(TextSpan(children: [
+            TextSpan(text: 'Dialogue Review', style: AppTypography.bodyMedium.copyWith(fontWeight: AppTypography.semibold)),
+            TextSpan(text: ' — breaking down a conversation you had: what happened, what worked, what didn\'t, and why.', style: AppTypography.bodyMedium),
+          ])),
+          const SizedBox(height: 6),
+          Text.rich(TextSpan(children: [
+            TextSpan(text: 'Situation Review', style: AppTypography.bodyMedium.copyWith(fontWeight: AppTypography.semibold)),
+            TextSpan(text: ' — making sense of the broader context of what\'s going on.', style: AppTypography.bodyMedium),
+          ])),
+          const SizedBox(height: 6),
+          Text.rich(TextSpan(children: [
+            TextSpan(text: 'The Other Person\'s Behavior', style: AppTypography.bodyMedium.copyWith(fontWeight: AppTypography.semibold)),
+            TextSpan(text: ' — reading what someone\'s actions and signals actually mean.', style: AppTypography.bodyMedium),
+          ])),
+          const SizedBox(height: 6),
+          Text.rich(TextSpan(children: [
+            TextSpan(text: 'Your Own Reaction', style: AppTypography.bodyMedium.copyWith(fontWeight: AppTypography.semibold)),
+            TextSpan(text: ' — examining why you responded a certain way and what it reveals.', style: AppTypography.bodyMedium),
+          ])),
+          const SizedBox(height: 16),
+          Text(
+            'The difference from Reflection: Understanding is about making sense of patterns. Reflection is about processing how something felt.',
             style: AppTypography.bodyMedium,
           ),
         ],
