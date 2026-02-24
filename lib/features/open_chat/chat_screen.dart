@@ -200,19 +200,38 @@ class _ChatScreenState extends State<ChatScreen> {
     SoundService().playSend();
     _scrollToBottom();
 
-    // 2. Создаём conversation если нужно (первое сообщение)
+    // 2. Запускаем createConversation параллельно с анимацией (не await)
+    Future<void>? createConvFuture;
     if (_conversation == null) {
+      final characterId = widget.character.isCoach ? null : widget.character.id;
+      createConvFuture = _repository.createConversation(
+        submodeId: widget.submodeId,
+        characterId: characterId,
+        difficultyLevel: widget.difficultyLevel,
+        language: 'en',
+        seedMessage: _greetingContent,
+      ).then((conv) {
+        _conversation = conv;
+      });
+    }
+
+    // 3. Sent → Read: random 800–2500ms (параллельно с createConversation)
+    await Future.delayed(_randomDelay(800, 2500));
+    if (!mounted) return;
+    setState(() {
+      _lastMessageReadStatus = MessageReadStatus.read;
+    });
+
+    // 4. Read → Start typing: random 500–2000ms
+    await Future.delayed(_randomDelay(500, 2000));
+    if (!mounted) return;
+
+    // 5. Ждём conversation если ещё не готов (обычно уже есть)
+    if (createConvFuture != null) {
       try {
-        final characterId = widget.character.isCoach ? null : widget.character.id;
-        final conversation = await _repository.createConversation(
-          submodeId: widget.submodeId,
-          characterId: characterId,
-          difficultyLevel: widget.difficultyLevel,
-          language: 'en',
-          seedMessage: _greetingContent,
-        );
-        setState(() => _conversation = conversation);
+        await createConvFuture;
       } catch (e) {
+        if (!mounted) return;
         setState(() {
           _messages.removeLast();
           _isSending = false;
@@ -225,29 +244,17 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     }
 
-    // 3. Fire API request in background immediately
+    // 6. Fire sendMessage — conversation гарантированно создан
     final apiFuture = _repository.sendMessage(
       conversationId: _conversation!.id,
       content: text,
     );
 
-    // 3. Sent → Read: random 800–2500ms
-    await Future.delayed(_randomDelay(800, 2500));
-    if (!mounted) return;
-    setState(() {
-      _lastMessageReadStatus = MessageReadStatus.read;
-    });
-
-    // 4. Read → Start typing: random 500–2000ms
-    await Future.delayed(_randomDelay(500, 2000));
-    if (!mounted) return;
     final typingStartedAt = DateTime.now();
     setState(() {
       _showTyping = true;
     });
     _scrollToBottom();
-
-    // 5. Wait for API, then hold typing based on response length
     try {
       final result = await apiFuture;
 
