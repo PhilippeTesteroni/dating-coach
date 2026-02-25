@@ -7,6 +7,7 @@ class SubscriptionPlanCard extends StatelessWidget {
   final String name;
   final String price;
   final String period;
+  final String? description;
   final bool isFeatured;
   final bool isLoading;
   final VoidCallback? onTap;
@@ -16,6 +17,7 @@ class SubscriptionPlanCard extends StatelessWidget {
     required this.name,
     required this.price,
     required this.period,
+    this.description,
     this.isFeatured = false,
     this.isLoading = false,
     this.onTap,
@@ -59,7 +61,7 @@ class SubscriptionPlanCard extends StatelessWidget {
                   Text(name, style: AppTypography.titleMedium),
                   const SizedBox(height: 4),
                   Text(
-                    'Unlimited messages',
+                    description ?? 'Unlimited messages',
                     style: AppTypography.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                     ),

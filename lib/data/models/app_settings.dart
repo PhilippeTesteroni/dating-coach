@@ -76,6 +76,7 @@ class SubscriptionProduct {
   final String period; // week, month
   final double price;
   final String currency;
+  final String? description;
 
   const SubscriptionProduct({
     required this.productId,
@@ -84,6 +85,7 @@ class SubscriptionProduct {
     required this.period,
     required this.price,
     this.currency = 'USD',
+    this.description,
   });
 
   factory SubscriptionProduct.fromJson(Map<String, dynamic> json) {
@@ -94,6 +96,7 @@ class SubscriptionProduct {
       period: json['period'] as String,
       price: (json['price'] as num).toDouble(),
       currency: json['currency'] as String? ?? 'USD',
+      description: json['description'] as String?,
     );
   }
 }

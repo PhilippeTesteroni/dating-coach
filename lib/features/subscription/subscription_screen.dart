@@ -25,12 +25,28 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   bool _isPurchasing = false;
   String? _purchasingBasePlanId;
 
+  // Цены из Google Play (null пока не загружены — fallback на S3)
+  Map<String, String> _storePrices = {};
+
   @override
   void initState() {
     super.initState();
     _subscriptionRepo = SubscriptionRepository(UserService().apiClient);
     _initBilling();
     _refreshStatus();
+    _loadStorePrices();
+  }
+
+  Future<void> _loadStorePrices() async {
+    try {
+      final response = await _billing.queryPrices();
+      if (mounted && response.isNotEmpty) {
+        setState(() => _storePrices = response);
+      }
+    } catch (e) {
+      // Fallback на цены из S3 — ничего не делаем
+      debugPrint('[SubscriptionScreen] Store prices unavailable: $e');
+    }
   }
 
   Future<void> _initBilling() async {
@@ -267,11 +283,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       itemBuilder: (context, index) {
         final product = products[index];
         final isThisLoading = _purchasingBasePlanId == product.basePlanId;
+        // Цена из Google Play если есть, иначе из S3
+        final storePrice = _storePrices[product.basePlanId];
+        final displayPrice = storePrice ?? '\$${product.price.toStringAsFixed(2)}';
 
         return SubscriptionPlanCard(
           name: product.name,
-          price: '\$${product.price.toStringAsFixed(2)}',
+          price: displayPrice,
           period: product.period,
+          description: product.description,
           isFeatured: product.period == 'month',
           isLoading: isThisLoading,
           onTap: _isPurchasing ? null : () => _onPlanTap(product),

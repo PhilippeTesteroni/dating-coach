@@ -222,6 +222,30 @@ class BillingService {
     return null;
   }
 
+  /// Получить локализованные цены из Google Play.
+  /// Возвращает map basePlanId → price string (напр. {"01": "$9.99", "02": "$20.99"})
+  Future<Map<String, String>> queryPrices() async {
+    if (!_isInitialized) await initialize();
+
+    final response = await _iap.queryProductDetails({subscriptionProductId});
+    if (response.error != null || response.productDetails.isEmpty) return {};
+
+    final prices = <String, String>{};
+    for (final product in response.productDetails) {
+      if (product is GooglePlayProductDetails) {
+        final idx = product.subscriptionIndex;
+        if (idx != null) {
+          final offers = product.productDetails.subscriptionOfferDetails;
+          if (offers != null && idx < offers.length) {
+            final basePlanId = offers[idx].basePlanId;
+            prices[basePlanId] = product.price;
+          }
+        }
+      }
+    }
+    return prices;
+  }
+
   /// Restore purchases (подписки)
   Future<void> restorePurchases({
     required Function(SubscriptionPurchaseResult) onResult,
