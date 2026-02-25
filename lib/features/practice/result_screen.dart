@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
+import '../../data/models/training_meta.dart';
 import '../../services/practice_service.dart';
 import '../../shared/widgets/dc_back_button.dart';
 import '../../shared/widgets/dc_header.dart';
@@ -227,8 +228,18 @@ class _ResultScreenState extends State<ResultScreen> {
 
           if (_unlocked.isNotEmpty) ...[
             Text('Unlocked', style: AppTypography.titleMedium),
-            const SizedBox(height: 8),
-            Text('New levels are now available.', style: AppTypography.bodyMedium),
+            const SizedBox(height: 16),
+            ..._unlocked.map((item) {
+              final submodeId = item['submode_id'] as String? ?? '';
+              final level = item['difficulty_level'] as int? ?? 1;
+              final training = kTrainings.firstWhere(
+                (t) => t.submodeId == submodeId,
+                orElse: () => TrainingMeta(submodeId: submodeId, title: submodeId, subtitle: ''),
+              );
+              const levelLabels = ['Easy', 'Medium', 'Hard'];
+              final levelLabel = levelLabels[(level - 1).clamp(0, 2)];
+              return _FeedbackItem(text: '${training.title} · $levelLabel');
+            }),
             const SizedBox(height: 36),
           ],
 
