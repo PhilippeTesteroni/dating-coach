@@ -59,11 +59,17 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _greetingContent;
   bool _isLoading = true;
   bool _isVisible = false;
-  bool _isSending = false;
+  bool _isSending = false;   // true только пока последнее сообщение ещё не прочитано (для read-статуса)
   bool _showTyping = false;
   bool _userSentMessage = false;
   MessageReadStatus _lastMessageReadStatus = MessageReadStatus.none;
   String? _error;
+
+  /// Количество сообщений в очереди (отправлены но ответ ещё не получен)
+  int _queueSize = 0;
+
+  /// ID последнего отправленного local-сообщения (для read-статуса)
+  String? _lastSentLocalId;
 
   /// Training message limit (null = unlimited, e.g. open_chat or coach modes)
   int? _messageLimit;
@@ -175,17 +181,16 @@ class _ChatScreenState extends State<ChatScreen> {
       Duration(milliseconds: minMs + _random.nextInt(maxMs - minMs));
 
   Future<void> _sendMessage(String text) async {
-    if (_isSending) return;
-
-    // Check subscription / free-tier limit before sending
+    // Subscription check
     if (!UserService().canSendMessage) {
       final subscribed = await DCCreditsPaywall.show(context);
       if (!subscribed) return;
     }
 
-    // 1. Показываем пузырь и играем звук мгновенно
+    // 1. Добавляем пузырь мгновенно
+    final localId = 'local_${DateTime.now().millisecondsSinceEpoch}';
     final userMessage = Message(
-      id: 'local_${DateTime.now().millisecondsSinceEpoch}',
+      id: localId,
       role: MessageRole.user,
       content: text,
       createdAt: DateTime.now(),
@@ -193,14 +198,16 @@ class _ChatScreenState extends State<ChatScreen> {
 
     setState(() {
       _messages.add(userMessage);
-      _isSending = true;
       _userSentMessage = true;
+      _queueSize++;
+      _isSending = true;
+      _lastSentLocalId = localId;
       _lastMessageReadStatus = MessageReadStatus.sent;
     });
     SoundService().playSend();
     _scrollToBottom();
 
-    // 2. Запускаем createConversation параллельно с анимацией (не await)
+    // 2. Запускаем createConversation параллельно с анимацией
     Future<void>? createConvFuture;
     if (_conversation == null) {
       final characterId = widget.character.isCoach ? null : widget.character.id;
@@ -215,27 +222,30 @@ class _ChatScreenState extends State<ChatScreen> {
       });
     }
 
-    // 3. Sent → Read: random 640–2000ms (параллельно с createConversation)
+    // 3. Sent → Read анимация (только для последнего сообщения)
     await Future.delayed(_randomDelay(640, 2000));
     if (!mounted) return;
-    setState(() {
-      _lastMessageReadStatus = MessageReadStatus.read;
-    });
+    if (_lastSentLocalId == localId) {
+      setState(() => _lastMessageReadStatus = MessageReadStatus.read);
+    }
 
-    // 4. Read → Start typing: random 400–1600ms
+    // 4. Read → Typing
     await Future.delayed(_randomDelay(400, 1600));
     if (!mounted) return;
 
-    // 5. Ждём conversation если ещё не готов (обычно уже есть)
+    // 5. Ждём conversation если нужно
     if (createConvFuture != null) {
       try {
         await createConvFuture;
       } catch (e) {
         if (!mounted) return;
         setState(() {
-          _messages.removeLast();
-          _isSending = false;
-          _lastMessageReadStatus = MessageReadStatus.none;
+          _messages.removeWhere((m) => m.id == localId);
+          _queueSize = (_queueSize - 1).clamp(0, 999);
+          if (_queueSize == 0) {
+            _isSending = false;
+            _showTyping = false;
+          }
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to start conversation')),
@@ -244,27 +254,24 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     }
 
-    // 6. Fire sendMessage — conversation гарантированно создан
-    final apiFuture = _repository.sendMessage(
-      conversationId: _conversation!.id,
-      content: text,
-    );
-
-    final typingStartedAt = DateTime.now();
-    setState(() {
-      _showTyping = true;
-    });
+    // 6. Показываем typing если ещё не показан
+    if (!mounted) return;
+    setState(() => _showTyping = true);
     _scrollToBottom();
+
+    // 7. Отправляем запрос — бэкенд сам поставит в очередь
+    final typingStartedAt = DateTime.now();
     try {
-      final result = await apiFuture;
+      final result = await _repository.sendMessage(
+        conversationId: _conversation!.id,
+        content: text,
+      );
 
       if (!mounted) return;
 
-      // Calculate typing duration: ~4 chars/sec, clamp 1.5s – 8s
+      // Typing duration по длине ответа
       final responseLength = result.assistantMessage.content.length;
       final typingMs = (responseLength / 4.0 * 1000).round().clamp(1500, 8000);
-
-      // Subtract time already spent showing "Writing..."
       final elapsed = DateTime.now().difference(typingStartedAt).inMilliseconds;
       final remainingMs = typingMs - elapsed;
       if (remainingMs > 0) {
@@ -274,19 +281,23 @@ class _ChatScreenState extends State<ChatScreen> {
       if (!mounted) return;
 
       setState(() {
-        _messages[_messages.length - 1] = result.userMessage;
+        // Заменяем local-пузырь на реальный из ответа сервера
+        final idx = _messages.indexWhere((m) => m.id == localId);
+        if (idx != -1) _messages[idx] = result.userMessage;
         _messages.add(result.assistantMessage);
-        _isSending = false;
-        _showTyping = false;
-        _lastMessageReadStatus = MessageReadStatus.none;
+
+        _queueSize = (_queueSize - 1).clamp(0, 999);
+        if (_queueSize == 0) {
+          _isSending = false;
+          _showTyping = false;
+          _lastMessageReadStatus = MessageReadStatus.none;
+        }
       });
       SoundService().playReceive();
       _scrollToBottom();
 
-      // Track user message count and auto-finish if limit reached
       _userMessageCount++;
       if (_messageLimit != null && _userMessageCount >= _messageLimit!) {
-        // Small delay so user sees the response before auto-finishing
         await Future.delayed(const Duration(milliseconds: 1500));
         if (mounted && widget.onFinish != null) {
           widget.onFinish!(_conversation?.id);
@@ -299,10 +310,13 @@ class _ChatScreenState extends State<ChatScreen> {
       if (!mounted) return;
 
       setState(() {
-        _messages.removeLast();
-        _isSending = false;
-        _showTyping = false;
-        _lastMessageReadStatus = MessageReadStatus.none;
+        _messages.removeWhere((m) => m.id == localId);
+        _queueSize = (_queueSize - 1).clamp(0, 999);
+        if (_queueSize == 0) {
+          _isSending = false;
+          _showTyping = false;
+          _lastMessageReadStatus = MessageReadStatus.none;
+        }
       });
 
       if (e is ApiException && e.isSubscriptionRequired) {
@@ -481,7 +495,7 @@ class _ChatScreenState extends State<ChatScreen> {
       );
     }
 
-    if (_messages.isEmpty && !_isSending && !_showTyping) {
+    if (_messages.isEmpty && _queueSize == 0 && !_showTyping) {
       return _buildEmptyState();
     }
 
@@ -557,13 +571,11 @@ class _ChatScreenState extends State<ChatScreen> {
         final isFirstAssistantMessage = !message.isUser &&
             (reversedIndex == 0 || _messages.take(reversedIndex).where((m) => !m.isSystem).every((m) => m.isUser));
 
-        // Read status for user messages:
-        // - Last user message while sending: animated sent → read
-        // - All other user messages: always read (bot already "read" them)
+        // Read status: только для последнего отправленного сообщения
         MessageReadStatus readStatus = MessageReadStatus.none;
         if (message.isUser) {
-          final isLastUserMsg = reversedIndex == _messages.length - 1 && _isSending;
-          readStatus = isLastUserMsg ? _lastMessageReadStatus : MessageReadStatus.read;
+          final isLastSent = message.id == _lastSentLocalId && _isSending;
+          readStatus = isLastSent ? _lastMessageReadStatus : MessageReadStatus.read;
         }
 
         return DCChatBubble(
@@ -583,7 +595,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final limitReached = _messageLimit != null && _userMessageCount >= _messageLimit!;
     return DCChatInput(
       onSend: _sendMessage,
-      enabled: !_isSending && !limitReached,
+      enabled: !limitReached,  // инпут всегда доступен пока не достигнут лимит
       hint: limitReached ? 'Message limit reached' : 'Type a message...',
     );
   }
