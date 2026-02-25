@@ -40,50 +40,70 @@ class SubscriptionPlanCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: isLoading ? null : onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: isFeatured
-              ? AppColors.action.withOpacity(0.25)
-              : AppColors.inputBackground,
-          borderRadius: BorderRadius.circular(12),
-          border: isFeatured
-              ? Border.all(color: AppColors.action.withOpacity(0.4), width: 1)
-              : null,
-        ),
-        child: Row(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: isFeatured
+                    ? AppColors.action.withOpacity(0.25)
+                    : AppColors.inputBackground,
+                borderRadius: BorderRadius.circular(12),
+                border: isFeatured
+                    ? Border.all(color: AppColors.action.withOpacity(0.4), width: 1)
+                    : null,
+              ),
+              child: Row(
                 children: [
-                  Text(name, style: AppTypography.titleMedium),
-                  const SizedBox(height: 4),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(name, style: AppTypography.titleMedium),
+                        const SizedBox(height: 4),
+                        Text(
+                          description ?? 'Unlimited messages',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   Text(
-                    description ?? 'Unlimited messages',
-                    style: AppTypography.bodySmall.copyWith(
+                    '$price $_periodLabel',
+                    style: AppTypography.bodyMedium.copyWith(
                       color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ],
               ),
             ),
             if (isLoading)
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.textSecondary,
-                ),
-              )
-            else
-              Text(
-                '$price $_periodLabel',
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w400,
+              Positioned.fill(
+                child: AnimatedOpacity(
+                  opacity: isLoading ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 150),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.inputBackground.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
           ],
