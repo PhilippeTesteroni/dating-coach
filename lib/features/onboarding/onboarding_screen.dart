@@ -13,7 +13,6 @@ import '../../shared/widgets/dc_modal.dart';
 import '../../shared/widgets/dc_option_card.dart';
 import '../../shared/widgets/dc_progress_dots.dart';
 import '../../shared/widgets/dc_range_selector.dart';
-import '../../shared/widgets/dc_scaffold.dart';
 import '../../shared/widgets/dc_text_field.dart';
 
 /// Онбординг — сбор профиля перед первым чатом
@@ -132,18 +131,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return DCScaffold(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildTopBar(),
-          const SizedBox(height: 12),
-          DCProgressDots(total: _totalSteps, current: _currentStep),
-          const SizedBox(height: 48),
-          Expanded(child: _buildStep()),
-          _buildBottom(),
-          const SizedBox(height: 16),
-        ],
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final hasKeyboard = bottomInset > 0;
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      resizeToAvoidBottomInset: false,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTopBar(),
+              const SizedBox(height: 12),
+              DCProgressDots(total: _totalSteps, current: _currentStep),
+              const SizedBox(height: 48),
+              Expanded(child: _buildStep()),
+              AnimatedPadding(
+                duration: const Duration(milliseconds: 150),
+                curve: Curves.easeOut,
+                padding: EdgeInsets.only(bottom: hasKeyboard ? bottomInset - 24 : 0),
+                child: _buildBottom(),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
       ),
     );
   }
