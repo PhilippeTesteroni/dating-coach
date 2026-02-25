@@ -131,15 +131,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final hasKeyboard = bottomInset > 0;
-
     return Scaffold(
       backgroundColor: AppColors.background,
-      resizeToAvoidBottomInset: false,
-      body: SafeArea(
+      resizeToAvoidBottomInset: true,
+      bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+          child: _buildBottom(),
+        ),
+      ),
+      body: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -148,13 +152,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               DCProgressDots(total: _totalSteps, current: _currentStep),
               const SizedBox(height: 48),
               Expanded(child: _buildStep()),
-              AnimatedPadding(
-                duration: const Duration(milliseconds: 150),
-                curve: Curves.easeOut,
-                padding: EdgeInsets.only(bottom: hasKeyboard ? bottomInset - 24 : 0),
-                child: _buildBottom(),
-              ),
-              const SizedBox(height: 16),
             ],
           ),
         ),
