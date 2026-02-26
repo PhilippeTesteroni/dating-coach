@@ -202,7 +202,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         } else {
           _resetPurchaseState();
           if (result.error != 'canceled') {
-            _showError('No active subscription found');
+            _showError(
+              result.error == 'no_purchases'
+                  ? 'No active subscription found'
+                  : result.error ?? 'Restore failed',
+            );
           }
         }
       },

@@ -254,8 +254,24 @@ class BillingService {
       await initialize();
     }
 
-    _onPurchaseResult = onResult;
+    bool resultCalled = false;
+
+    _onPurchaseResult = (result) {
+      resultCalled = true;
+      onResult(result);
+    };
+
     await _iap.restorePurchases();
+
+    // Если через 5 секунд onResult не вызвался — подписок нет
+    await Future.delayed(const Duration(seconds: 5));
+    if (!resultCalled) {
+      _onPurchaseResult = null;
+      onResult(const SubscriptionPurchaseResult(
+        success: false,
+        error: 'no_purchases',
+      ));
+    }
   }
 
   void dispose() {
