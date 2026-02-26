@@ -10,6 +10,7 @@ class SubscriptionPlanCard extends StatelessWidget {
   final String? description;
   final bool isFeatured;
   final bool isLoading;
+  final String? badge;
   final VoidCallback? onTap;
 
   const SubscriptionPlanCard({
@@ -20,6 +21,7 @@ class SubscriptionPlanCard extends StatelessWidget {
     this.description,
     this.isFeatured = false,
     this.isLoading = false,
+    this.badge,
     this.onTap,
   });
 
@@ -102,6 +104,29 @@ class SubscriptionPlanCard extends StatelessWidget {
                           color: AppColors.textSecondary,
                         ),
                       ),
+                    ),
+                  ),
+                ),
+              ),
+            if (badge != null)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.action,
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(12),
+                      bottomLeft: Radius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    badge!,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
                     ),
                   ),
                 ),

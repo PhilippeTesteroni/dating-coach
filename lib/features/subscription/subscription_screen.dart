@@ -351,6 +351,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           description: product.description,
           isFeatured: product.period == 'month',
           isLoading: isThisLoading,
+          badge: product.period == 'month' ? '7 days free' : null,
           onTap: _isPurchasing ? null : () => _onPlanTap(product),
         );
       },
