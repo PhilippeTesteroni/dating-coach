@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
+import '../../data/api/api_client.dart';
 import '../../data/models/app_settings.dart';
 import '../../data/services/billing_service.dart';
 import '../../data/repositories/subscription_repository.dart';
+import '../../services/analytics_service.dart';
 import '../../services/app_settings_service.dart';
 import '../../services/user_service.dart';
 import '../../shared/widgets/dc_back_button.dart';
@@ -12,7 +14,10 @@ import 'widgets/subscription_plan_card.dart';
 
 /// Экран подписки
 class SubscriptionScreen extends StatefulWidget {
-  const SubscriptionScreen({super.key});
+  /// Откуда открыт экран: 'paywall' или 'menu'
+  final String source;
+
+  const SubscriptionScreen({super.key, this.source = 'menu'});
 
   @override
   State<SubscriptionScreen> createState() => _SubscriptionScreenState();
@@ -35,6 +40,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     _initBilling();
     _refreshStatus();
     _loadStorePrices();
+    // Логируем только если открыт из меню — при открытии из paywall
+    // событие уже залогировано в DCCreditsPaywall._handleResult
+    if (widget.source == 'menu') {
+      AnalyticsService().logSubscriptionScreenOpened(source: 'menu');
+    }
   }
 
   Future<void> _loadStorePrices() async {
@@ -66,10 +76,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   Future<void> _onPlanTap(SubscriptionProduct product) async {
     if (_isPurchasing) return;
 
+    AnalyticsService().logSubscriptionPlanTapped(plan: product.basePlanId);
+
     setState(() {
       _isPurchasing = true;
       _purchasingBasePlanId = product.basePlanId;
     });
+
+    AnalyticsService().logSubscriptionPurchaseStarted(plan: product.basePlanId);
 
     await _billing.purchaseSubscription(
       basePlanId: product.basePlanId,
@@ -78,17 +92,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         if (!mounted) return;
 
         if (result.success && result.purchaseToken != null) {
-          // Верифицируем покупку на бэкенде
           await _verifyPurchase(
             productId: result.productId ?? product.productId,
             purchaseToken: result.purchaseToken!,
             basePlanId: product.basePlanId,
           );
         } else if (result.error == 'canceled') {
-          // Пользователь отменил — молча сбрасываем
+          AnalyticsService().logSubscriptionPurchaseCancelled(plan: product.basePlanId);
           _resetPurchaseState();
         } else {
-          // Ошибка покупки
+          AnalyticsService().logSubscriptionPurchaseFailed(
+            plan: product.basePlanId,
+            error: result.error ?? 'unknown',
+          );
           _resetPurchaseState();
           _showError(result.error ?? 'Purchase failed');
         }
@@ -109,32 +125,43 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         platform: 'google_play',
         basePlanId: basePlanId,
       );
-
-      // Обновить статус подписки с сервера
-      await UserService().loadSubscriptionStatus();
-
-      if (mounted) {
-        setState(() {
-          _isPurchasing = false;
-          _purchasingBasePlanId = null;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Subscription activated! 🎉'),
-            backgroundColor: AppColors.action,
-          ),
-        );
-
-        // Вернуться в чат — подписка активна
-        if (mounted) {
-          Navigator.pop(context);
-        }
+    } on ApiException catch (e) {
+      // 409 = токен уже обработан, подписка активна — это не ошибка
+      if (e.statusCode != 409) {
+        debugPrint('[SubscriptionScreen] Verify error: $e');
+        _resetPurchaseState();
+        _showError('Failed to verify purchase. Please try again.');
+        return;
       }
+      debugPrint('[SubscriptionScreen] Purchase already processed, treating as success');
     } catch (e) {
-      print('[SubscriptionScreen] Verify error: $e');
+      debugPrint('[SubscriptionScreen] Verify error: $e');
       _resetPurchaseState();
       _showError('Failed to verify purchase. Please try again.');
+      return;
+    }
+
+    // Обновить статус подписки с сервера
+    await UserService().loadSubscriptionStatus();
+
+    if (mounted) {
+      AnalyticsService().logSubscriptionPurchaseCompleted(
+        plan: basePlanId ?? 'unknown',
+      );
+
+      setState(() {
+        _isPurchasing = false;
+        _purchasingBasePlanId = null;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Subscription activated! 🎉'),
+          backgroundColor: AppColors.action,
+        ),
+      );
+
+      if (mounted) Navigator.pop(context);
     }
   }
 
@@ -166,6 +193,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         if (!mounted) return;
 
         if (result.success && result.purchaseToken != null) {
+          AnalyticsService().logSubscriptionRestored();
           await _verifyPurchase(
             productId: result.productId ?? BillingService.subscriptionProductId,
             purchaseToken: result.purchaseToken!,
