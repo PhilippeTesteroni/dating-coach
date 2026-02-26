@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/api/api_client.dart';
@@ -248,6 +249,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final userService = UserService();
 
     if (userService.isSubscribed) {
+      final status = userService.subscriptionStatus;
+      final planName = _getPlanName(status?.productId);
+      final expiresAt = _formatDate(status?.expiresAt);
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -259,14 +264,21 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 Text('Premium Active', style: AppTypography.displaySmall),
                 const SizedBox(height: 4),
                 Text(
-                  'You\'re all set 🎉',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                  planName,
+                  style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
                 ),
+                if (expiresAt != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Renews $expiresAt',
+                    style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                  ),
+                ],
               ],
             ),
           ),
+          const SizedBox(height: 24),
+          _buildManageButton(),
           const SizedBox(height: 32),
           Text(
             'Your benefits',
@@ -342,6 +354,52 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           onTap: _isPurchasing ? null : () => _onPlanTap(product),
         );
       },
+    );
+  }
+
+  String _getPlanName(String? productId) {
+    if (productId == null) return 'Premium';
+    if (productId.contains('week')) return 'Weekly plan';
+    if (productId.contains('month')) return 'Monthly plan';
+    if (productId.contains('year')) return 'Annual plan';
+    return 'Premium';
+  }
+
+  String? _formatDate(String? isoDate) {
+    if (isoDate == null) return null;
+    try {
+      final dt = DateTime.parse(isoDate).toLocal();
+      return '${dt.day} ${_monthName(dt.month)} ${dt.year}';
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _monthName(int month) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[month - 1];
+  }
+
+  Widget _buildManageButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton(
+        onPressed: () async {
+          const url = 'https://play.google.com/store/account/subscriptions?package=com.shittyapps.datingcoach';
+          if (await canLaunchUrl(Uri.parse(url))) {
+            await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+          }
+        },
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: AppColors.action.withOpacity(0.4)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+        ),
+        child: Text(
+          'Manage subscription',
+          style: AppTypography.bodyMedium.copyWith(color: AppColors.action),
+        ),
+      ),
     );
   }
 
