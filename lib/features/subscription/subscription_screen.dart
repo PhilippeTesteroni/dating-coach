@@ -249,17 +249,34 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     if (userService.isSubscribed) {
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.check_circle_outline, size: 48, color: AppColors.action),
-          const SizedBox(height: 12),
-          Text('Premium Active', style: AppTypography.displaySmall),
-          const SizedBox(height: 4),
-          Text(
-            'Unlimited messages',
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+          Center(
+            child: Column(
+              children: [
+                const Icon(Icons.check_circle_outline, size: 48, color: AppColors.action),
+                const SizedBox(height: 12),
+                Text('Premium Active', style: AppTypography.displaySmall),
+                const SizedBox(height: 4),
+                Text(
+                  'You\'re all set 🎉',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
             ),
           ),
+          const SizedBox(height: 32),
+          Text(
+            'Your benefits',
+            style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 16),
+          _buildPerk(Icons.all_inclusive, 'Unlimited messages', 'No daily limits, practice as much as you want'),
+          _buildPerk(Icons.people_outline, 'All characters', 'Access to every coach and practice partner'),
+          _buildPerk(Icons.psychology_outlined, 'All training modes', 'Practice, Understanding, Reflection & Open Chat'),
+          _buildPerk(Icons.trending_up, 'Full progress tracking', 'Detailed feedback and skill progression'),
         ],
       );
     }
@@ -328,19 +345,55 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
+  Widget _buildPerk(IconData icon, String title, String subtitle) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.action.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 20, color: AppColors.action),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w500)),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFooter() {
+    final isSubscribed = UserService().isSubscribed;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(
         children: [
-          Text(
-            'Subscribe to unlock unlimited\nmessages and practice sessions.',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.textSecondary,
+          if (!isSubscribed)
+            Text(
+              'Subscribe to unlock unlimited\nmessages and practice sessions.',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-          if (!UserService().isSubscribed) ...[
+          if (!isSubscribed) ...[
             const SizedBox(height: 16),
             GestureDetector(
               onTap: _isPurchasing ? null : _onRestoreTap,
